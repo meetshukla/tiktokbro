@@ -148,7 +148,7 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
   }[overlay.size];
 
   return (
-    <div className="flex h-full bg-gray-50">
+    <div className="flex h-full bg-muted/30">
       {/* Large Preview */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="relative rounded-2xl overflow-hidden shadow-2xl bg-gray-900">
@@ -158,22 +158,22 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
             className="relative w-[320px] h-[568px]"
           >
             {!isComplete ? (
-              <div className="w-full h-full flex flex-col items-center justify-center bg-gray-100">
+              <div className="w-full h-full flex flex-col items-center justify-center bg-muted">
                 {slide.status === 'generating' || isRegenerating ? (
                   <>
-                    <Loader2 className="h-12 w-12 animate-spin text-[#E86D55] mb-4" />
-                    <p className="text-gray-500">Generating your image...</p>
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <p className="text-muted-foreground">Generating your image...</p>
                   </>
                 ) : slide.status === 'error' ? (
                   <>
-                    <p className="text-red-500 mb-4">Generation failed</p>
+                    <p className="text-destructive mb-4">Generation failed</p>
                     <Button onClick={handleRegenerate} variant="outline">
                       <RefreshCw className="h-4 w-4 mr-2" />
                       Try Again
                     </Button>
                   </>
                 ) : (
-                  <p className="text-gray-400">Waiting to generate...</p>
+                  <p className="text-muted-foreground">Waiting to generate...</p>
                 )}
               </div>
             ) : imageSrc ? (
@@ -235,11 +235,11 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
       </div>
 
       {/* Edit Panel */}
-      <div className="w-80 border-l border-gray-200 bg-white p-6 overflow-y-auto">
+      <div className="w-80 border-l bg-card p-6 overflow-y-auto">
         <div className="space-y-6">
           {/* Actions */}
           <div>
-            <h3 className="text-sm font-medium text-gray-900 mb-3">Actions</h3>
+            <h3 className="text-sm font-medium text-foreground mb-3">Actions</h3>
             <div className="grid grid-cols-2 gap-2">
               <Button
                 variant="outline"
@@ -270,21 +270,21 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
 
           {/* Image Prompt */}
           <div>
-            <Label className="text-sm font-medium text-gray-900">Image Prompt</Label>
+            <Label className="text-sm font-medium text-foreground">Image Prompt</Label>
             <Textarea
               value={slide.plan.imagePrompt}
               onChange={(e) => updatePlan(slide.slideNumber, { imagePrompt: e.target.value })}
               className="mt-2 min-h-[100px] text-sm resize-none"
               placeholder="Describe the image..."
             />
-            <p className="mt-1 text-xs text-gray-400">
+            <p className="mt-1 text-xs text-muted-foreground">
               Edit and regenerate to get a new image
             </p>
           </div>
 
           {/* Text Overlay */}
           <div>
-            <Label className="text-sm font-medium text-gray-900">Text Overlay</Label>
+            <Label className="text-sm font-medium text-foreground">Text Overlay</Label>
             <Input
               value={overlay.text}
               onChange={(e) => handleOverlayChange(e.target.value)}
@@ -297,11 +297,11 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
           {overlay.text && (
             <>
               <div>
-                <Label className="text-sm font-medium text-gray-900">Text Style</Label>
+                <Label className="text-sm font-medium text-foreground">Text Style</Label>
                 <div className="mt-2 space-y-3">
                   {/* Size */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-12">Size</span>
+                    <span className="text-xs text-muted-foreground w-12">Size</span>
                     <div className="flex gap-1 flex-1">
                       {(['small', 'medium', 'large'] as const).map((size) => (
                         <button
@@ -309,8 +309,8 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
                           onClick={() => setOverlay({ size })}
                           className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
                             overlay.size === size
-                              ? 'bg-[#E86D55] text-white'
-                              : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground hover:bg-muted/80'
                           }`}
                         >
                           {size.charAt(0).toUpperCase() + size.slice(1)}
@@ -321,16 +321,16 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
 
                   {/* Color */}
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-12">Color</span>
+                    <span className="text-xs text-muted-foreground w-12">Color</span>
                     <div className="flex gap-1 flex-1">
-                      {['#ffffff', '#000000', '#E86D55', '#FFD700', '#00D4FF'].map((color) => (
+                      {['#ffffff', '#000000', '#71717a', '#FFD700', '#00D4FF'].map((color) => (
                         <button
                           key={color}
                           onClick={() => setOverlay({ color })}
                           className={`w-8 h-8 rounded-lg border-2 transition-all ${
                             overlay.color === color
-                              ? 'border-[#E86D55] scale-110'
-                              : 'border-gray-200'
+                              ? 'border-primary scale-110'
+                              : 'border-muted'
                           }`}
                           style={{ backgroundColor: color }}
                         />
@@ -342,8 +342,8 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
 
               {/* Text Position */}
               <div>
-                <Label className="text-sm font-medium text-gray-900">Text Position</Label>
-                <p className="text-xs text-gray-400 mt-1 mb-2">
+                <Label className="text-sm font-medium text-foreground">Text Position</Label>
+                <p className="text-xs text-muted-foreground mt-1 mb-2">
                   Drag text on preview or use presets
                 </p>
                 <div className="flex gap-2">
@@ -353,8 +353,8 @@ export function SlideDetailEditor({ slide, onClose }: SlideDetailEditorProps) {
                       onClick={() => setOverlay({ position: { x: preset.x, y: preset.y } })}
                       className={`flex-1 px-3 py-1.5 text-xs rounded-md transition-colors ${
                         Math.abs(overlay.position.y - preset.y) < 10 && Math.abs(overlay.position.x - preset.x) < 10
-                          ? 'bg-[#E86D55] text-white'
-                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-muted-foreground hover:bg-muted/80'
                       }`}
                     >
                       {preset.label}

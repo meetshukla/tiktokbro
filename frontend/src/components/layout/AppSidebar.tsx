@@ -2,36 +2,28 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HugeiconsIcon } from '@hugeicons/react';
-import {
-  Image01Icon,
-  Video01Icon,
-  SparklesIcon,
-} from '@hugeicons/core-free-icons';
+import { Images, Video, Sparkles } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
   SidebarGroup,
   SidebarGroupContent,
-  SidebarGroupLabel,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter,
 } from '@/components/ui/sidebar';
 
-const navigation = [
+const items = [
   {
-    name: 'Slideshows',
-    href: '/slideshows',
-    icon: Image01Icon,
+    title: 'Slideshows',
+    url: '/slideshows',
+    icon: Images,
   },
   {
-    name: 'AI Avatar',
-    href: '/avatar',
-    icon: Video01Icon,
-    badge: 'Soon',
+    title: 'AI Avatars',
+    url: '/avatar',
+    icon: Video,
   },
 ];
 
@@ -41,54 +33,42 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary">
-            <HugeiconsIcon icon={SparklesIcon} className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-sm font-semibold">TikTokBro</span>
-            <span className="text-xs text-muted-foreground">Creator Studio</span>
-          </div>
-        </div>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              size="lg"
+              render={<Link href="/" />}
+            >
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+                <Sparkles className="size-4" />
+              </div>
+              <span className="font-semibold">TikTokBro</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
-
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Create</SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              {navigation.map((item) => {
-                const isActive =
-                  pathname.startsWith(item.href) ||
-                  (item.href === '/slideshows' && pathname === '/');
-
-                return (
-                  <SidebarMenuItem key={item.name}>
-                    <SidebarMenuButton
-                      isActive={isActive}
-                      render={<Link href={item.href} />}
-                    >
-                      <HugeiconsIcon icon={item.icon} />
-                      <span>{item.name}</span>
-                      {item.badge && (
-                        <span className="ml-auto px-1.5 py-0.5 text-[10px] font-medium rounded bg-muted text-muted-foreground">
-                          {item.badge}
-                        </span>
-                      )}
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
+            <SidebarMenu className="gap-1">
+              {items.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    render={<Link href={item.url} />}
+                    isActive={
+                      pathname === item.url ||
+                      (item.url === '/slideshows' && pathname === '/')
+                    }
+                  >
+                    <item.icon className="size-4" />
+                    <span>{item.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-
-      <SidebarFooter>
-        <div className="px-2 py-2 text-xs text-muted-foreground">
-          v1.0.0
-        </div>
-      </SidebarFooter>
     </Sidebar>
   );
 }

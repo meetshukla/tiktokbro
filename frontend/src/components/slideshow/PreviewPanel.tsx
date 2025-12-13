@@ -18,13 +18,13 @@ export function PreviewPanel() {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <div className="text-center max-w-sm">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gray-100 mb-6">
-            <ImageIcon className="h-8 w-8 text-gray-400" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-muted mb-6">
+            <ImageIcon className="h-8 w-8 text-muted-foreground" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Create Your First Slideshow
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             Enter a prompt on the left to generate AI-powered slides for your
             TikTok content
           </p>
@@ -38,16 +38,16 @@ export function PreviewPanel() {
     return (
       <div className="flex flex-col items-center justify-center h-full">
         <div className="text-center">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#E86D55]/10 mb-6">
-            <Sparkles className="h-8 w-8 text-[#E86D55] animate-pulse" />
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-6">
+            <Sparkles className="h-8 w-8 text-primary animate-pulse" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+          <h3 className="text-lg font-semibold text-foreground mb-2">
             Creating Your Plan
           </h3>
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-muted-foreground">
             AI is designing slide ideas based on your prompt...
           </p>
-          <Loader2 className="h-5 w-5 animate-spin text-[#E86D55] mx-auto mt-4" />
+          <Loader2 className="h-5 w-5 animate-spin text-primary mx-auto mt-4" />
         </div>
       </div>
     );
@@ -68,19 +68,19 @@ export function PreviewPanel() {
       <div className="flex flex-col h-full p-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold text-gray-900">
+            <h2 className="text-lg font-semibold text-foreground">
               Generating Images
             </h2>
-            <span className="text-sm font-medium text-[#E86D55]">
+            <span className="text-sm font-medium text-primary">
               {percentage}%
             </span>
           </div>
-          <p className="text-sm text-gray-500 mb-3">
+          <p className="text-sm text-muted-foreground mb-3">
             {completed} of {total} slides complete
           </p>
-          <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+          <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className="h-full bg-[#E86D55] transition-all duration-500"
+              className="h-full bg-primary transition-all duration-500"
               style={{ width: `${percentage}%` }}
             />
           </div>
@@ -102,10 +102,10 @@ export function PreviewPanel() {
     return (
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-card">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Edit Slides</h2>
-            <p className="text-sm text-gray-500">
+            <h2 className="text-lg font-semibold text-foreground">Edit Slides</h2>
+            <p className="text-sm text-muted-foreground">
               Click a slide to add text overlays
             </p>
           </div>
@@ -114,7 +114,6 @@ export function PreviewPanel() {
               variant="outline"
               size="sm"
               onClick={reset}
-              className="border-gray-200"
             >
               <RotateCcw className="h-4 w-4 mr-2" />
               Start Over
@@ -122,7 +121,6 @@ export function PreviewPanel() {
             <Button
               size="sm"
               onClick={() => setStage('complete')}
-              className="bg-[#E86D55] hover:bg-[#D55D45]"
             >
               Done Editing
               <ArrowRight className="h-4 w-4 ml-2" />
@@ -131,7 +129,7 @@ export function PreviewPanel() {
         </div>
 
         {/* Slide thumbnails */}
-        <div className="flex gap-3 px-6 py-4 border-b border-gray-200 bg-white overflow-x-auto">
+        <div className="flex gap-3 px-6 py-4 border-b bg-card overflow-x-auto">
           {session.slides.map((slide) => (
             <div
               key={slide.id}
@@ -149,7 +147,7 @@ export function PreviewPanel() {
             <SlideEditor slide={selectedSlide} />
           ) : (
             <div className="flex flex-col items-center justify-center h-full">
-              <p className="text-sm text-gray-500">Select a slide above to edit</p>
+              <p className="text-sm text-muted-foreground">Select a slide above to edit</p>
             </div>
           )}
         </div>

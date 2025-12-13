@@ -25,21 +25,21 @@ export function PlanReview() {
   return (
     <div className="flex-1 flex overflow-hidden">
       {/* Left - Plan List */}
-      <div className="w-[400px] border-r border-gray-200 bg-white overflow-y-auto">
-        <div className="p-4 border-b border-gray-100">
-          <p className="text-sm text-gray-500">
+      <div className="w-[400px] border-r bg-card overflow-y-auto">
+        <div className="p-4 border-b">
+          <p className="text-sm text-muted-foreground">
             Review and edit your slide plans before generating images
           </p>
         </div>
 
-        <div className="divide-y divide-gray-100">
+        <div className="divide-y">
           {session.plans.map((plan) => (
             <div
               key={plan.slideNumber}
               className={`cursor-pointer transition-colors ${
                 expandedSlide === plan.slideNumber
-                  ? 'bg-[#E86D55]/5'
-                  : 'hover:bg-gray-50'
+                  ? 'bg-primary/5'
+                  : 'hover:bg-muted'
               }`}
               onClick={() => setExpandedSlide(plan.slideNumber)}
             >
@@ -48,22 +48,22 @@ export function PlanReview() {
                   <div
                     className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-medium ${
                       expandedSlide === plan.slideNumber
-                        ? 'bg-[#E86D55] text-white'
-                        : 'bg-gray-100 text-gray-600'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-muted-foreground'
                     }`}
                   >
                     {plan.slideNumber}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-gray-900 truncate">
+                    <p className="font-medium text-foreground truncate">
                       {plan.suggestedOverlay || `Slide ${plan.slideNumber}`}
                     </p>
-                    <p className="text-sm text-gray-500 truncate">
+                    <p className="text-sm text-muted-foreground truncate">
                       {plan.imagePrompt.slice(0, 60)}...
                     </p>
                   </div>
                   <ChevronRight
-                    className={`w-5 h-5 text-gray-400 transition-transform ${
+                    className={`w-5 h-5 text-muted-foreground transition-transform ${
                       expandedSlide === plan.slideNumber ? 'rotate-90' : ''
                     }`}
                   />
@@ -74,11 +74,11 @@ export function PlanReview() {
         </div>
 
         {/* Generate Button */}
-        <div className="p-4 border-t border-gray-200 bg-gray-50">
+        <div className="p-4 border-t bg-muted/50">
           <Button
             onClick={generateImages}
             disabled={isLoading}
-            className="w-full bg-[#E86D55] hover:bg-[#D55D45]"
+            className="w-full"
             size="lg"
           >
             {isLoading ? (
@@ -97,7 +97,7 @@ export function PlanReview() {
       </div>
 
       {/* Right - Edit Panel */}
-      <div className="flex-1 bg-gray-50 overflow-y-auto">
+      <div className="flex-1 bg-muted/30 overflow-y-auto">
         {expandedSlide ? (
           <div className="p-6 max-w-2xl mx-auto">
             {(() => {
@@ -108,21 +108,21 @@ export function PlanReview() {
                 <div className="space-y-6">
                   {/* Header */}
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#E86D55] text-white flex items-center justify-center text-lg font-semibold">
+                    <div className="w-10 h-10 rounded-xl bg-primary text-primary-foreground flex items-center justify-center text-lg font-semibold">
                       {plan.slideNumber}
                     </div>
                     <div>
-                      <h2 className="text-lg font-semibold text-gray-900">
+                      <h2 className="text-lg font-semibold text-foreground">
                         Slide {plan.slideNumber}
                       </h2>
-                      <p className="text-sm text-gray-500">Edit the details below</p>
+                      <p className="text-sm text-muted-foreground">Edit the details below</p>
                     </div>
                   </div>
 
                   {/* Image Prompt */}
-                  <div className="bg-white rounded-xl p-5 space-y-5 shadow-sm border border-gray-200">
+                  <div className="bg-card rounded-xl p-5 space-y-5 shadow-sm border">
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
                         <ImageIcon className="w-4 h-4" />
                         Image Prompt
                       </div>
@@ -132,15 +132,15 @@ export function PlanReview() {
                           updatePlan(plan.slideNumber, { imagePrompt: e.target.value })
                         }
                         placeholder="Describe the image you want AI to generate..."
-                        className="min-h-[120px] resize-none border-gray-200"
+                        className="min-h-[120px] resize-none"
                       />
-                      <p className="text-xs text-gray-400">
+                      <p className="text-xs text-muted-foreground">
                         Be specific about style, lighting, composition, and mood
                       </p>
                     </div>
 
                     <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                      <div className="flex items-center gap-2 text-sm font-medium text-card-foreground">
                         <Pencil className="w-4 h-4" />
                         Text Overlay (Optional)
                       </div>
@@ -150,22 +150,21 @@ export function PlanReview() {
                           updatePlan(plan.slideNumber, { suggestedOverlay: e.target.value })
                         }
                         placeholder="Short text to display on the slide"
-                        className="border-gray-200"
                       />
                     </div>
                   </div>
 
                   {/* Preview Card */}
-                  <div className="bg-white rounded-xl p-5 shadow-sm border border-gray-200">
-                    <h3 className="text-sm font-medium text-gray-700 mb-3">Preview</h3>
-                    <div className="aspect-[9/16] max-w-[200px] mx-auto bg-gray-100 rounded-lg flex items-center justify-center">
+                  <div className="bg-card rounded-xl p-5 shadow-sm border">
+                    <h3 className="text-sm font-medium text-card-foreground mb-3">Preview</h3>
+                    <div className="aspect-[9/16] max-w-[200px] mx-auto bg-muted rounded-lg flex items-center justify-center">
                       <div className="text-center p-4">
-                        <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                        <p className="text-xs text-gray-400">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-xs text-muted-foreground">
                           Image will be generated
                         </p>
                         {plan.suggestedOverlay && (
-                          <p className="mt-4 text-sm font-medium text-gray-600">
+                          <p className="mt-4 text-sm font-medium text-muted-foreground">
                             &quot;{plan.suggestedOverlay}&quot;
                           </p>
                         )}
@@ -177,7 +176,7 @@ export function PlanReview() {
             })()}
           </div>
         ) : (
-          <div className="flex items-center justify-center h-full text-gray-500">
+          <div className="flex items-center justify-center h-full text-muted-foreground">
             Select a slide to edit
           </div>
         )}

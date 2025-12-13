@@ -30,8 +30,8 @@ export function StoryboardSlide({ slide, isSelected, onClick }: StoryboardSlideP
         'rounded-xl overflow-hidden',
         'hover:scale-105 hover:shadow-lg',
         isSelected
-          ? 'ring-2 ring-[#E86D55] ring-offset-2 scale-105 shadow-lg'
-          : 'ring-1 ring-gray-200'
+          ? 'ring-2 ring-primary ring-offset-2 scale-105 shadow-lg'
+          : 'ring-1 ring-border'
       )}
       onClick={onClick}
     >
@@ -42,16 +42,16 @@ export function StoryboardSlide({ slide, isSelected, onClick }: StoryboardSlideP
 
       {/* Status Indicator */}
       {slide.status === 'complete' && slide.editedImageData && (
-        <div className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-[#E86D55] text-white flex items-center justify-center">
+        <div className="absolute top-2 right-2 z-10 w-5 h-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center">
           <Check className="w-3 h-3" />
         </div>
       )}
 
       {/* Slide Content */}
-      <div className="w-24 h-[170px] bg-gray-100">
+      <div className="w-24 h-[170px] bg-muted">
         {slide.status === 'pending' && (
-          <div className="w-full h-full flex flex-col items-center justify-center text-gray-400">
-            <div className="w-8 h-8 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center mb-2">
+          <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground">
+            <div className="w-8 h-8 rounded-lg border-2 border-dashed border-muted-foreground/50 flex items-center justify-center mb-2">
               <span className="text-xs">{slide.slideNumber}</span>
             </div>
             <span className="text-[10px]">Pending</span>
@@ -59,9 +59,9 @@ export function StoryboardSlide({ slide, isSelected, onClick }: StoryboardSlideP
         )}
 
         {slide.status === 'generating' && (
-          <div className="w-full h-full flex flex-col items-center justify-center bg-[#E86D55]/5">
-            <Loader2 className="h-6 w-6 animate-spin text-[#E86D55] mb-2" />
-            <span className="text-[10px] text-[#E86D55]">Creating...</span>
+          <div className="w-full h-full flex flex-col items-center justify-center bg-primary/5">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mb-2" />
+            <span className="text-[10px] text-primary">Creating...</span>
           </div>
         )}
 

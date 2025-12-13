@@ -99,71 +99,21 @@ export function Storyboard() {
     }
   };
 
-  // Get header title based on stage
-  const getHeaderTitle = () => {
-    if (!session) return 'Create Slideshow';
-    if (isReviewStage) return 'Review Your Plan';
-    if (session.stage === 'generating') return 'Generating Images...';
-    return 'Your Slideshow';
-  };
-
   return (
     <div className="flex flex-col h-full">
-      {/* Top Bar */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-white">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold text-gray-900">
-            {getHeaderTitle()}
-          </h1>
-          {hasSlides && (
-            <span className="text-sm text-gray-500">
-              {completedSlides.length} of {session?.slides.length} slides ready
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          {(hasPlans || hasSlides) && (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={reset}
-              className="text-gray-600"
-            >
-              Start Over
-            </Button>
-          )}
-          {hasSlides && completedSlides.length > 0 && (
-            <Button
-              size="sm"
-              onClick={downloadAllAsZip}
-              disabled={downloading}
-              className="bg-[#E86D55] hover:bg-[#D55D45]"
-            >
-              {downloading ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <FileArchive className="h-4 w-4 mr-2" />
-              )}
-              Export All
-            </Button>
-          )}
-        </div>
-      </div>
-
       {/* Main Content */}
       {!session || session.stage === 'prompt' || session.stage === 'planning' ? (
         /* Empty State - Prompt Input */
         <div className="flex-1 flex items-center justify-center p-8">
           <div className="w-full max-w-2xl">
             <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#E86D55]/10 mb-4">
-                <Wand2 className="h-8 w-8 text-[#E86D55]" />
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary/10 mb-4">
+                <Wand2 className="h-8 w-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-semibold text-gray-900 mb-2">
+              <h2 className="text-2xl font-semibold text-foreground mb-2">
                 Create Your Slideshow
               </h2>
-              <p className="text-gray-500">
+              <p className="text-muted-foreground">
                 Describe your content idea and we&apos;ll generate stunning visuals
               </p>
             </div>
@@ -174,14 +124,14 @@ export function Storyboard() {
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
                 disabled={isLoading}
-                className="min-h-[120px] resize-none text-base border-gray-200 focus:border-[#E86D55] focus:ring-[#E86D55]"
+                className="min-h-[120px] resize-none text-base"
               />
 
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Slides:</span>
+                  <span className="text-sm text-muted-foreground">Slides:</span>
                   <Select value={slideCount} onValueChange={setSlideCount} disabled={isLoading}>
-                    <SelectTrigger className="w-24 border-gray-200">
+                    <SelectTrigger className="w-24">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -194,13 +144,13 @@ export function Storyboard() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-sm text-gray-500">Format:</span>
+                  <span className="text-sm text-muted-foreground">Format:</span>
                   <Select
                     value={aspectRatio}
                     onValueChange={(v) => setAspectRatio(v as '9:16' | '1:1' | '16:9')}
                     disabled={isLoading}
                   >
-                    <SelectTrigger className="w-32 border-gray-200">
+                    <SelectTrigger className="w-32">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -217,7 +167,7 @@ export function Storyboard() {
                   onClick={handleGenerate}
                   disabled={!prompt.trim() || isLoading}
                   size="lg"
-                  className="bg-[#E86D55] hover:bg-[#D55D45] px-8"
+                  className="px-8"
                 >
                   {isLoading ? (
                     <>
@@ -249,14 +199,14 @@ export function Storyboard() {
                 onClose={() => setSelectedSlideId(null)}
               />
             ) : (
-              <div className="flex items-center justify-center h-full text-gray-500">
+              <div className="flex items-center justify-center h-full text-muted-foreground">
                 Select a slide to edit
               </div>
             )}
           </div>
 
           {/* Slide Strip - Bottom */}
-          <div className="border-t border-gray-200 bg-white">
+          <div className="border-t bg-card">
             <div className="flex items-center gap-4 p-4 overflow-x-auto">
               {session?.slides.map((slide) => (
                 <StoryboardSlide

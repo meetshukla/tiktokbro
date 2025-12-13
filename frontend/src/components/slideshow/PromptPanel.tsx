@@ -34,9 +34,9 @@ export function PromptPanel() {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-5 border-b border-gray-100">
-        <h1 className="text-lg font-semibold text-gray-900">New Slideshow</h1>
-        <p className="text-sm text-gray-500 mt-1">
+      <div className="px-6 py-5 border-b">
+        <h1 className="text-lg font-semibold text-foreground">New Slideshow</h1>
+        <p className="text-sm text-muted-foreground mt-1">
           Describe your viral content idea
         </p>
       </div>
@@ -45,7 +45,7 @@ export function PromptPanel() {
       <div className="flex-1 p-6 space-y-6 overflow-y-auto">
         {/* Prompt Input */}
         <div className="space-y-3">
-          <Label htmlFor="prompt" className="text-sm font-medium text-gray-700">
+          <Label htmlFor="prompt" className="text-sm font-medium text-foreground">
             Your Prompt
           </Label>
           <Textarea
@@ -54,24 +54,24 @@ export function PromptPanel() {
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             disabled={isDisabled}
-            className="min-h-[140px] resize-none border-gray-200 focus:border-[#E86D55] focus:ring-[#E86D55]"
+            className="min-h-[140px] resize-none"
           />
           <div className="flex justify-between items-center">
-            <p className="text-xs text-gray-400">Be specific for better results</p>
-            <p className="text-xs text-gray-400">{prompt.length}/1000</p>
+            <p className="text-xs text-muted-foreground">Be specific for better results</p>
+            <p className="text-xs text-muted-foreground">{prompt.length}/1000</p>
           </div>
         </div>
 
         {/* Configuration Section */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground">
             <Settings2 className="w-4 h-4" />
             Configuration
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="slideCount" className="text-xs text-gray-500">
+              <Label htmlFor="slideCount" className="text-xs text-muted-foreground">
                 Number of Slides
               </Label>
               <Select
@@ -81,7 +81,7 @@ export function PromptPanel() {
                 }
                 disabled={isDisabled}
               >
-                <SelectTrigger id="slideCount" className="border-gray-200">
+                <SelectTrigger id="slideCount">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -94,7 +94,7 @@ export function PromptPanel() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="aspectRatio" className="text-xs text-gray-500">
+              <Label htmlFor="aspectRatio" className="text-xs text-muted-foreground">
                 Aspect Ratio
               </Label>
               <Select
@@ -104,7 +104,7 @@ export function PromptPanel() {
                 }
                 disabled={isDisabled}
               >
-                <SelectTrigger id="aspectRatio" className="border-gray-200">
+                <SelectTrigger id="aspectRatio">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,7 +117,7 @@ export function PromptPanel() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="model" className="text-xs text-gray-500">
+            <Label htmlFor="model" className="text-xs text-muted-foreground">
               AI Model
             </Label>
             <Select
@@ -127,7 +127,7 @@ export function PromptPanel() {
               }
               disabled={isDisabled}
             >
-              <SelectTrigger id="model" className="border-gray-200">
+              <SelectTrigger id="model">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -144,11 +144,11 @@ export function PromptPanel() {
       </div>
 
       {/* Footer */}
-      <div className="p-6 border-t border-gray-100">
+      <div className="p-6 border-t">
         <Button
           onClick={handleGenerate}
           disabled={!prompt.trim() || isDisabled}
-          className="w-full bg-[#E86D55] hover:bg-[#D55D45] text-white"
+          className="w-full"
           size="lg"
         >
           {isLoading ? (
