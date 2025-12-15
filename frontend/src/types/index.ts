@@ -60,6 +60,8 @@ export interface RemixPlan {
   // Pinterest candidates fetched after user triggers search
   pinterestCandidates?: PinterestCandidate[];
   selectedImageUrl?: string;
+  // Text position for the overlay
+  textPosition?: { x: number; y: number };
 }
 
 export interface PinterestCandidate {

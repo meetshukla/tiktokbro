@@ -16,7 +16,7 @@ export function getGeminiClient(): GoogleGenAI {
 }
 
 export const TEXT_MODEL = 'gemini-2.0-flash';
-export const VISION_MODEL = 'gemini-3-pro-preview'; // Best for image analysis
+export const VISION_MODEL = 'gemini-2.5-pro'; // Best for image analysis
 export const IMAGE_MODEL = 'imagen-4.0-generate-001';
 
 export interface SlideAnalysis {
@@ -64,6 +64,10 @@ export async function analyzeSlideImage(imageUrl: string): Promise<SlideAnalysis
 
   const text = response.text;
   if (!text) {
+    console.error('Gemini Vision returned empty response:', {
+      imageUrl,
+      response: JSON.stringify(response, null, 2),
+    });
     throw new Error('No response from Gemini Vision');
   }
 
