@@ -42,7 +42,8 @@ type SlideshowAction =
       type: 'SET_PINTEREST_CANDIDATES';
       payload: { slideNumber: number; candidates: PinterestCandidate[] };
     }
-  | { type: 'SET_PRODUCT_CONTEXT'; payload: string };
+  | { type: 'SET_PRODUCT_CONTEXT'; payload: string }
+  | { type: 'DELETE_REMIX_PLAN'; payload: number };
 
 const initialState: SlideshowState = {
   session: null,
@@ -202,6 +203,18 @@ function slideshowReducer(state: SlideshowState, action: SlideshowAction): Slide
         session: { ...state.session, productContext: action.payload },
       };
 
+    case 'DELETE_REMIX_PLAN':
+      if (!state.session || !state.session.remixPlans) return state;
+      const filteredPlans = state.session.remixPlans
+        .filter((plan) => plan.slideNumber !== action.payload)
+        .map((plan, index) => ({ ...plan, slideNumber: index + 1 }));
+      return {
+        session: {
+          ...state.session,
+          remixPlans: filteredPlans,
+        },
+      };
+
     default:
       return state;
   }
@@ -218,6 +231,7 @@ interface SlideshowContextValue {
   setSlideAnalyses: (analyses: SlideAnalysis[]) => void;
   setRemixPlans: (plans: RemixPlan[]) => void;
   updateRemixPlan: (slideNumber: number, updates: Partial<RemixPlan>) => void;
+  deleteRemixPlan: (slideNumber: number) => void;
   setPinterestCandidates: (slideNumber: number, candidates: PinterestCandidate[]) => void;
   initSlides: (plans: SlidePlan[]) => void;
   setSlides: (slides: GeneratedSlide[]) => void;
@@ -247,6 +261,7 @@ export function SlideshowProvider({ children }: { children: ReactNode }) {
     setRemixPlans: (plans) => dispatch({ type: 'SET_REMIX_PLANS', payload: plans }),
     updateRemixPlan: (slideNumber, updates) =>
       dispatch({ type: 'UPDATE_REMIX_PLAN', payload: { slideNumber, updates } }),
+    deleteRemixPlan: (slideNumber) => dispatch({ type: 'DELETE_REMIX_PLAN', payload: slideNumber }),
     setPinterestCandidates: (slideNumber, candidates) =>
       dispatch({ type: 'SET_PINTEREST_CANDIDATES', payload: { slideNumber, candidates } }),
     initSlides: (plans) => dispatch({ type: 'INIT_SLIDES', payload: plans }),

@@ -62,7 +62,7 @@ router.post(
  */
 router.post('/remix', async (req: Request, res: Response) => {
   try {
-    const { analyses, userPrompt, productContext } = req.body;
+    const { analyses, userPrompt, productContext, userGuidance } = req.body;
 
     if (!analyses || !Array.isArray(analyses) || analyses.length === 0) {
       return res.status(400).json({
@@ -79,7 +79,12 @@ router.post('/remix', async (req: Request, res: Response) => {
     }
 
     const typedAnalyses = analyses as (SlideAnalysis & { index: number })[];
-    const remixPlans = await generateRemixPlan(typedAnalyses, userPrompt, productContext);
+    const remixPlans = await generateRemixPlan(
+      typedAnalyses,
+      userPrompt,
+      productContext,
+      userGuidance
+    );
 
     return res.json({
       success: true,

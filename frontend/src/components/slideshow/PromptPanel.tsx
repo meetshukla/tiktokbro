@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useSlideshowGenerator } from '@/hooks/useSlideshowGenerator';
 import { ImageConfig } from '@/types';
-import { Loader2, Download, Sparkles, Copy } from 'lucide-react';
+import { Loader2, Download, Sparkles, Copy, Lightbulb } from 'lucide-react';
 
 interface PromptPanelProps {
   sessionId?: string;
@@ -16,6 +17,7 @@ export function PromptPanel({ sessionId }: PromptPanelProps) {
   const { session, isLoading, importFromTikTok } = useSlideshowGenerator();
   const [tiktokUrl, setTiktokUrl] = useState('');
   const [remixMode, setRemixMode] = useState(true); // Default to remix mode
+  const [userGuidance, setUserGuidance] = useState('');
   const [config] = useState<ImageConfig>({
     aspectRatio: '9:16',
     model: 'imagen-4.0-generate-001',
@@ -24,7 +26,7 @@ export function PromptPanel({ sessionId }: PromptPanelProps) {
 
   const handleImport = () => {
     if (!tiktokUrl.trim()) return;
-    importFromTikTok(tiktokUrl, config, remixMode);
+    importFromTikTok(tiktokUrl, config, remixMode, userGuidance.trim() || undefined);
   };
 
   const isDisabled =
@@ -98,6 +100,31 @@ export function PromptPanel({ sessionId }: PromptPanelProps) {
             </button>
           </div>
         </div>
+
+        {/* AI Guidance Box - Only shown in remix mode */}
+        {remixMode && (
+          <div className="space-y-3">
+            <Label
+              htmlFor="userGuidance"
+              className="text-sm font-medium text-foreground flex items-center gap-2"
+            >
+              <Lightbulb className="size-4 text-amber-500" />
+              Guide the AI (optional)
+            </Label>
+            <Textarea
+              id="userGuidance"
+              placeholder="e.g., Make it more casual and fun, focus on skincare benefits, target young professionals, use humor..."
+              value={userGuidance}
+              onChange={(e) => setUserGuidance(e.target.value)}
+              disabled={isDisabled}
+              rows={3}
+              className="resize-none"
+            />
+            <p className="text-xs text-muted-foreground">
+              Tell the AI what direction, tone, or style you want for the remix
+            </p>
+          </div>
+        )}
 
         {/* What happens */}
         <div className="p-4 bg-muted/50 rounded-lg space-y-2">

@@ -19,6 +19,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -36,7 +37,7 @@ import { useCanvasRenderer } from './CanvasEditor/useCanvasRenderer';
 import JSZip from 'jszip';
 
 export function RemixPlanReview() {
-  const { session, setSlides } = useSlideshowContext();
+  const { session, setSlides, deleteRemixPlan } = useSlideshowContext();
   const { isLoading, editRemixPlan, searchPinterestForSlide, searchPinterestForAll } =
     useSlideshowGenerator();
 
@@ -656,40 +657,63 @@ export function RemixPlanReview() {
             );
             const isActive = plan.slideNumber === activeSlide;
             const hasSelection = !!plan.selectedImageUrl;
+            const canDelete = (session.remixPlans?.length ?? 0) > 1;
 
             return (
-              <button
-                key={plan.slideNumber}
-                onClick={() => changeSlide(plan.slideNumber)}
-                className={cn(
-                  'relative shrink-0 w-9 h-12 rounded overflow-hidden border-2 transition-all',
-                  isActive
-                    ? 'border-primary ring-2 ring-primary/20'
-                    : 'border-transparent hover:border-muted-foreground/30',
-                  !hasSelection && !isActive && 'opacity-50'
-                )}
-              >
-                {original?.imageUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={original.imageUrl}
-                    alt={`Slide ${plan.slideNumber}`}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <ImageIcon className="h-2 w-2 text-muted-foreground" />
+              <div key={plan.slideNumber} className="relative group shrink-0">
+                <button
+                  onClick={() => changeSlide(plan.slideNumber)}
+                  className={cn(
+                    'relative w-9 h-12 rounded overflow-hidden border-2 transition-all',
+                    isActive
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-transparent hover:border-muted-foreground/30',
+                    !hasSelection && !isActive && 'opacity-50'
+                  )}
+                >
+                  {original?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={original.imageUrl}
+                      alt={`Slide ${plan.slideNumber}`}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-muted flex items-center justify-center">
+                      <ImageIcon className="h-2 w-2 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="absolute top-0 left-0 w-3.5 h-3.5 rounded-full bg-black/60 text-white text-[8px] flex items-center justify-center">
+                    {plan.slideNumber}
                   </div>
+                  {hasSelection && (
+                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 flex items-center justify-center">
+                      <Check className="h-1.5 w-1.5 text-white" />
+                    </div>
+                  )}
+                </button>
+                {/* Delete button - shown on hover */}
+                {canDelete && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // If deleting active slide, move to previous or next
+                      if (isActive) {
+                        const newSlide = plan.slideNumber > 1 ? plan.slideNumber - 1 : 1;
+                        setActiveSlide(newSlide);
+                      } else if (activeSlide > plan.slideNumber) {
+                        // Adjust active slide number if deleting a slide before it
+                        setActiveSlide(activeSlide - 1);
+                      }
+                      deleteRemixPlan(plan.slideNumber);
+                    }}
+                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:scale-110"
+                    title="Delete slide"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
                 )}
-                <div className="absolute top-0 left-0 w-3.5 h-3.5 rounded-full bg-black/60 text-white text-[8px] flex items-center justify-center">
-                  {plan.slideNumber}
-                </div>
-                {hasSelection && (
-                  <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 flex items-center justify-center">
-                    <Check className="h-1.5 w-1.5 text-white" />
-                  </div>
-                )}
-              </button>
+              </div>
             );
           })}
         </div>

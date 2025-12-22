@@ -104,7 +104,8 @@ export async function generateSlidePlan(prompt: string, slideCount: number): Pro
 export async function generateRemixPlan(
   originalAnalyses: (SlideAnalysis & { index: number })[],
   userPrompt: string,
-  productContext?: string
+  productContext?: string,
+  userGuidance?: string
 ): Promise<RemixPlan[]> {
   const ai = getGeminiClient();
 
@@ -122,7 +123,8 @@ export async function generateRemixPlan(
     slideDescriptions,
     userPrompt,
     originalAnalyses.length,
-    productContext
+    productContext,
+    userGuidance
   );
 
   const response = await ai.models.generateContent({

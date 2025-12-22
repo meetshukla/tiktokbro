@@ -155,6 +155,7 @@ export interface RemixPlanRequest {
   analyses: SlideAnalysis[];
   userPrompt: string;
   productContext?: string;
+  userGuidance?: string;
 }
 
 export interface RemixPlanResponse {

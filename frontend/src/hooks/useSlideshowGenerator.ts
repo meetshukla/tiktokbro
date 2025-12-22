@@ -173,9 +173,15 @@ export function useSlideshowGenerator() {
   /**
    * Import a TikTok slideshow: scrape + analyze + optionally remix with AI
    * @param remix - If true, AI rewrites text for product context. If false, keeps original text.
+   * @param userGuidance - Optional guidance/direction from user for the AI remix
    */
   const importFromTikTok = useCallback(
-    async (tiktokUrl: string, config: ImageConfig, remix: boolean = true) => {
+    async (
+      tiktokUrl: string,
+      config: ImageConfig,
+      remix: boolean = true,
+      userGuidance?: string
+    ) => {
       setIsLoading(true);
       try {
         // Step 1: Scrape TikTok
@@ -228,6 +234,7 @@ export function useSlideshowGenerator() {
             analyses,
             userPrompt: 'Create a remix with similar style',
             productContext: effectiveProductContext || undefined,
+            userGuidance: userGuidance || undefined,
           });
 
           if (remixResponse.success && remixResponse.plans) {
