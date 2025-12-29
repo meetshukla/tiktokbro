@@ -6,15 +6,12 @@ export const SLIDE_ANALYSIS_PROMPT = `You are analyzing a TikTok slideshow image
 1. A BACKGROUND IMAGE (photo/illustration behind everything)
 2. TEXT OVERLAYS (words/sentences ADDED ON TOP by the creator - usually with solid background boxes, shadows, or distinct fonts)
 
-Your job is to SEPARATELY identify each layer. Return ONLY a valid JSON object:
-
-{
-  "imageDescription": "3-5 word SIMPLE Pinterest search. Keep it GENERIC and HIGH-LEVEL. Examples: 'college student studying', 'girl on beach sunset', 'coffee shop aesthetic', 'person cooking kitchen'. NO specific details like ceiling types, wall colors, or furniture brands.",
-  "backgroundType": "photo | illustration | gradient | solid | collage",
-  "backgroundStyle": "The visual aesthetic (cozy, minimalist, dark moody, bright, aesthetic, vintage, etc.)",
-  "extractedText": "ONLY the OVERLAY text added by the creator. NOT text that naturally appears in the photo (like text on screens, signs, books, shirts, etc.)",
-  "textPlacement": "Where the OVERLAY text appears: top | center | bottom | full-screen | multiple-areas"
-}
+Your job is to SEPARATELY identify each layer and return:
+- imageDescription: 3-5 word SIMPLE Pinterest search. Keep it GENERIC and HIGH-LEVEL. Examples: 'college student studying', 'girl on beach sunset', 'coffee shop aesthetic'. NO specific details.
+- backgroundType: one of 'photo', 'illustration', 'gradient', 'solid', or 'collage'
+- backgroundStyle: The visual aesthetic (cozy, minimalist, dark moody, bright, aesthetic, vintage, etc.)
+- extractedText: ONLY the OVERLAY text added by the creator. NOT text that naturally appears in the photo.
+- textPlacement: one of 'top', 'center', 'bottom', 'full-screen', 'multiple-areas', or 'none'
 
 CRITICAL FOR imageDescription:
 - Keep it SIMPLE and GENERIC - we want to find SIMILAR vibes, not exact matches

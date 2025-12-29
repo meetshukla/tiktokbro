@@ -51,19 +51,9 @@ STEP 2 - PINTEREST QUERY DECISION:
 - If DIFFERENT NICHE: Generate NEW Pinterest queries that MATCH THE CONTENT of your newOverlayText while keeping similar visual style
 
 For each slide, provide:
-1. pinterestQuery - Based on niche analysis above
+1. pinterestQuery - Based on niche analysis above (same or new query based on niche match)
 2. newOverlayText - Create NEW content following the same structure
 3. layoutNotes - Match original text placement
-
-Return ONLY a valid JSON array:
-[
-  {
-    "slideNumber": 1,
-    "pinterestQuery": "same or new query based on niche match",
-    "newOverlayText": "New text following same structure",
-    "layoutNotes": "Match original placement"
-  }
-]
 
 RULES:
 - Slide 1 HOOK: Keep the same hook FORMAT. E.g., "the EASIEST way I learned to X" stays as "the EASIEST way I learned to X"

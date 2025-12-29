@@ -126,8 +126,8 @@ export function RemixPlanReview() {
       if (!canvasContainerRef.current) return;
 
       const container = canvasContainerRef.current;
-      const containerHeight = container.clientHeight - 80; // padding
-      const containerWidth = container.clientWidth - 48; // padding
+      const containerHeight = container.clientHeight - 80;
+      const containerWidth = container.clientWidth - 48;
 
       // 9:16 aspect ratio
       const aspectRatio = 9 / 16;

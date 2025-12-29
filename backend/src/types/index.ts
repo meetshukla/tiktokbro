@@ -1,3 +1,9 @@
+import type { SlidePlan as SlidePlanType, RemixPlan as RemixPlanType } from '../schemas';
+export type { SlidePlan, RemixPlan } from '../schemas';
+
+type SlidePlan = SlidePlanType;
+type RemixPlan = RemixPlanType;
+
 export type WorkflowStage =
   | 'prompt'
   | 'planning'
@@ -9,10 +15,14 @@ export type WorkflowStage =
   | 'analyzing'
   | 'remix-review';
 
-export interface SlidePlan {
-  slideNumber: number;
-  imagePrompt: string;
-  suggestedOverlay?: string;
+// SlideAnalysis with index for API responses (extends base schema type)
+export interface SlideAnalysis {
+  index: number;
+  imageDescription: string;
+  backgroundType: string;
+  backgroundStyle: string;
+  extractedText: string;
+  textPlacement: string;
 }
 
 export interface GeneratedSlide {
@@ -50,22 +60,6 @@ export interface TikTokScrapeResult {
   caption: string;
   slides: TikTokSlide[];
   authorName?: string;
-}
-
-export interface SlideAnalysis {
-  index: number;
-  imageDescription: string;
-  backgroundType: string;
-  backgroundStyle: string;
-  extractedText: string;
-  textPlacement: string;
-}
-
-export interface RemixPlan {
-  slideNumber: number;
-  pinterestQuery: string;
-  newOverlayText: string;
-  layoutNotes: string;
 }
 
 export interface PinterestCandidate {
