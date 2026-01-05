@@ -43,7 +43,8 @@ type SlideshowAction =
       payload: { slideNumber: number; candidates: PinterestCandidate[] };
     }
   | { type: 'SET_PRODUCT_CONTEXT'; payload: string }
-  | { type: 'DELETE_REMIX_PLAN'; payload: number };
+  | { type: 'DELETE_REMIX_PLAN'; payload: number }
+  | { type: 'ADD_REMIX_PLAN'; payload: { afterSlideNumber?: number } };
 
 const initialState: SlideshowState = {
   session: null,
@@ -215,6 +216,27 @@ function slideshowReducer(state: SlideshowState, action: SlideshowAction): Slide
         },
       };
 
+    case 'ADD_REMIX_PLAN':
+      if (!state.session || !state.session.remixPlans) return state;
+      const afterSlide = action.payload.afterSlideNumber ?? state.session.remixPlans.length;
+      const newPlan: RemixPlan = {
+        slideNumber: afterSlide + 1,
+        pinterestQuery: 'aesthetic background',
+        newOverlayText: '',
+        layoutNotes: 'center',
+      };
+      const updatedPlans = [
+        ...state.session.remixPlans.slice(0, afterSlide),
+        newPlan,
+        ...state.session.remixPlans.slice(afterSlide),
+      ].map((plan, index) => ({ ...plan, slideNumber: index + 1 }));
+      return {
+        session: {
+          ...state.session,
+          remixPlans: updatedPlans,
+        },
+      };
+
     default:
       return state;
   }
@@ -232,6 +254,7 @@ interface SlideshowContextValue {
   setRemixPlans: (plans: RemixPlan[]) => void;
   updateRemixPlan: (slideNumber: number, updates: Partial<RemixPlan>) => void;
   deleteRemixPlan: (slideNumber: number) => void;
+  addRemixPlan: (afterSlideNumber?: number) => void;
   setPinterestCandidates: (slideNumber: number, candidates: PinterestCandidate[]) => void;
   initSlides: (plans: SlidePlan[]) => void;
   setSlides: (slides: GeneratedSlide[]) => void;
@@ -262,6 +285,8 @@ export function SlideshowProvider({ children }: { children: ReactNode }) {
     updateRemixPlan: (slideNumber, updates) =>
       dispatch({ type: 'UPDATE_REMIX_PLAN', payload: { slideNumber, updates } }),
     deleteRemixPlan: (slideNumber) => dispatch({ type: 'DELETE_REMIX_PLAN', payload: slideNumber }),
+    addRemixPlan: (afterSlideNumber) =>
+      dispatch({ type: 'ADD_REMIX_PLAN', payload: { afterSlideNumber } }),
     setPinterestCandidates: (slideNumber, candidates) =>
       dispatch({ type: 'SET_PINTEREST_CANDIDATES', payload: { slideNumber, candidates } }),
     initSlides: (plans) => dispatch({ type: 'INIT_SLIDES', payload: plans }),

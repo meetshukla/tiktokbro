@@ -104,6 +104,9 @@ export const CanvasEditor = forwardRef<CanvasEditorRef, CanvasEditorProps>(
     const [isDragging, setIsDragging] = useState(false);
     const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
+    // Get device pixel ratio once on mount for retina display support
+    const dpr = useRef(typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1);
+
     const { render, exportToBlob, hitTest } = useCanvasRenderer({ width, height });
 
     // Re-render canvas when dependencies change
@@ -117,8 +120,12 @@ export const CanvasEditor = forwardRef<CanvasEditorRef, CanvasEditorProps>(
           ? textBoxes.filter((box) => box.id !== selectedTextId)
           : textBoxes;
 
-      render(canvas, imageUrl, textBoxesToRender).catch(console.error);
-    }, [imageUrl, textBoxes, render, isEditing, selectedTextId]);
+      // Use device pixel ratio for sharper rendering on retina displays
+      const ratio = dpr.current;
+      render(canvas, imageUrl, textBoxesToRender, width * ratio, height * ratio).catch(
+        console.error
+      );
+    }, [imageUrl, textBoxes, render, isEditing, selectedTextId, width, height]);
 
     // Focus textarea when editing
     useEffect(() => {
@@ -302,7 +309,7 @@ export const CanvasEditor = forwardRef<CanvasEditorRef, CanvasEditorProps>(
         tabIndex={0}
         onKeyDown={handleKeyDown}
       >
-        {/* Canvas for rendering */}
+        {/* Canvas for rendering - internal resolution scaled by DPR, CSS size stays at display size */}
         <canvas ref={canvasRef} className="absolute inset-0 rounded-lg" style={{ width, height }} />
 
         {/* Interaction overlay */}

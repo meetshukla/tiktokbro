@@ -10,7 +10,6 @@ import {
   Loader2,
   Search,
   Check,
-  ImageIcon,
   Download,
   ChevronLeft,
   ChevronRight,
@@ -19,7 +18,7 @@ import {
   AlignLeft,
   AlignCenter,
   AlignRight,
-  X,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -37,7 +36,7 @@ import { useCanvasRenderer } from './CanvasEditor/useCanvasRenderer';
 import JSZip from 'jszip';
 
 export function RemixPlanReview() {
-  const { session, setSlides, deleteRemixPlan } = useSlideshowContext();
+  const { session, setSlides, deleteRemixPlan, addRemixPlan } = useSlideshowContext();
   const { isLoading, editRemixPlan, searchPinterestForSlide, searchPinterestForAll } =
     useSlideshowGenerator();
 
@@ -126,8 +125,9 @@ export function RemixPlanReview() {
       if (!canvasContainerRef.current) return;
 
       const container = canvasContainerRef.current;
-      const containerHeight = container.clientHeight - 80;
-      const containerWidth = container.clientWidth - 48;
+      // Account for padding, navigation buttons, slide counter, and add button
+      const containerHeight = container.clientHeight - 120;
+      const containerWidth = container.clientWidth - 160; // Account for nav arrows
 
       // 9:16 aspect ratio
       const aspectRatio = 9 / 16;
@@ -143,8 +143,8 @@ export function RemixPlanReview() {
       }
 
       // Clamp to reasonable bounds - smaller for 13" screens
-      width = Math.max(250, Math.min(400, width));
-      height = Math.max(444, Math.min(711, height));
+      width = Math.max(220, Math.min(350, width));
+      height = Math.max(391, Math.min(622, height));
 
       setCanvasSize({ width: Math.round(width), height: Math.round(height) });
     };
@@ -647,83 +647,12 @@ export function RemixPlanReview() {
   const totalCount = session.remixPlans.length;
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Slide Strip */}
-      <div className="border-b bg-muted/30 px-3 py-1 shrink-0">
-        <div className="flex items-center gap-1.5 overflow-x-auto">
-          {session.remixPlans.map((plan) => {
-            const original = session.tiktokData?.slides.find(
-              (s) => s.index === plan.slideNumber - 1
-            );
-            const isActive = plan.slideNumber === activeSlide;
-            const hasSelection = !!plan.selectedImageUrl;
-            const canDelete = (session.remixPlans?.length ?? 0) > 1;
-
-            return (
-              <div key={plan.slideNumber} className="relative group shrink-0">
-                <button
-                  onClick={() => changeSlide(plan.slideNumber)}
-                  className={cn(
-                    'relative w-9 h-12 rounded overflow-hidden border-2 transition-all',
-                    isActive
-                      ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-transparent hover:border-muted-foreground/30',
-                    !hasSelection && !isActive && 'opacity-50'
-                  )}
-                >
-                  {original?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={original.imageUrl}
-                      alt={`Slide ${plan.slideNumber}`}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-muted flex items-center justify-center">
-                      <ImageIcon className="h-2 w-2 text-muted-foreground" />
-                    </div>
-                  )}
-                  <div className="absolute top-0 left-0 w-3.5 h-3.5 rounded-full bg-black/60 text-white text-[8px] flex items-center justify-center">
-                    {plan.slideNumber}
-                  </div>
-                  {hasSelection && (
-                    <div className="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 flex items-center justify-center">
-                      <Check className="h-1.5 w-1.5 text-white" />
-                    </div>
-                  )}
-                </button>
-                {/* Delete button - shown on hover */}
-                {canDelete && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // If deleting active slide, move to previous or next
-                      if (isActive) {
-                        const newSlide = plan.slideNumber > 1 ? plan.slideNumber - 1 : 1;
-                        setActiveSlide(newSlide);
-                      } else if (activeSlide > plan.slideNumber) {
-                        // Adjust active slide number if deleting a slide before it
-                        setActiveSlide(activeSlide - 1);
-                      }
-                      deleteRemixPlan(plan.slideNumber);
-                    }}
-                    className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center hover:scale-110"
-                    title="Delete slide"
-                  >
-                    <X className="h-2.5 w-2.5" />
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
+    <div className="flex flex-col h-full overflow-hidden min-h-0">
       {/* Main Content */}
       {currentPlan && (
-        <div className="flex-1 flex overflow-hidden min-h-0">
+        <div className="flex-1 flex overflow-hidden min-h-0 max-h-full">
           {/* Left: Image Selection */}
-          <div className="w-[280px] border-r flex flex-col min-h-0">
+          <div className="w-[280px] border-r flex flex-col min-h-0 overflow-hidden">
             {/* Search & Upload Bar */}
             <div className="p-2 border-b flex gap-1.5">
               <Input
@@ -891,10 +820,10 @@ export function RemixPlanReview() {
             )}
           </div>
 
-          {/* Center: Canvas Editor */}
+          {/* Center: Canvas Editor with Navigation */}
           <div
             ref={canvasContainerRef}
-            className="flex-1 flex items-center justify-center bg-zinc-900 p-3"
+            className="flex-1 flex flex-col items-center justify-center bg-zinc-900 p-3 min-h-0 overflow-hidden"
             onClick={(e) => {
               // Deselect when clicking on the background (not on canvas)
               if (e.target === e.currentTarget) {
@@ -902,29 +831,89 @@ export function RemixPlanReview() {
               }
             }}
           >
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
-              {/* Slide badge */}
-              <div className="absolute -top-6 left-0 px-2 py-0.5 bg-black/60 text-white text-xs rounded">
-                Slide {activeSlide}
+            <div className="relative flex items-center gap-4" onClick={(e) => e.stopPropagation()}>
+              {/* Left Navigation Arrow */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-12 w-12 rounded-full bg-black/40 hover:bg-black/60 text-white shrink-0"
+                onClick={() => changeSlide((prev) => prev - 1)}
+                disabled={activeSlide === 1}
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+
+              {/* Canvas Container */}
+              <div className="flex flex-col items-center">
+                {/* Slide Counter & Delete */}
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="px-3 py-1 bg-black/60 text-white text-sm rounded-full font-medium">
+                    {activeSlide} / {totalCount}
+                  </span>
+                  {totalCount > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 rounded-full bg-destructive/80 hover:bg-destructive text-white"
+                      onClick={() => {
+                        const newSlide = activeSlide > 1 ? activeSlide - 1 : 1;
+                        if (activeSlide === totalCount || activeSlide > 1) {
+                          setActiveSlide(newSlide);
+                        }
+                        deleteRemixPlan(activeSlide);
+                      }}
+                      title="Delete this slide"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  )}
+                </div>
+
+                {/* Canvas */}
+                <div className="rounded-xl overflow-hidden shadow-2xl">
+                  <CanvasEditor
+                    ref={(ref) => setCanvasRef(activeSlide, ref)}
+                    imageUrl={currentPlan.selectedImageUrl || null}
+                    textBoxes={currentTextBoxes}
+                    selectedTextId={selectedTextId}
+                    onTextBoxesChange={handleTextBoxesChange}
+                    onSelectionChange={setSelectedTextId}
+                    width={canvasSize.width}
+                    height={canvasSize.height}
+                  />
+                </div>
+
+                {/* Add Slide Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-3 text-white/70 hover:text-white hover:bg-white/10"
+                  onClick={() => {
+                    addRemixPlan(activeSlide);
+                    // Navigate to the newly added slide
+                    setActiveSlide(activeSlide + 1);
+                  }}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Add Slide After
+                </Button>
               </div>
 
-              <div className="rounded-xl overflow-hidden shadow-2xl">
-                <CanvasEditor
-                  ref={(ref) => setCanvasRef(activeSlide, ref)}
-                  imageUrl={currentPlan.selectedImageUrl || null}
-                  textBoxes={currentTextBoxes}
-                  selectedTextId={selectedTextId}
-                  onTextBoxesChange={handleTextBoxesChange}
-                  onSelectionChange={setSelectedTextId}
-                  width={canvasSize.width}
-                  height={canvasSize.height}
-                />
-              </div>
+              {/* Right Navigation Arrow */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-12 w-12 rounded-full bg-black/40 hover:bg-black/60 text-white shrink-0"
+                onClick={() => changeSlide((prev) => prev + 1)}
+                disabled={activeSlide === totalCount}
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
             </div>
           </div>
 
           {/* Right: Controls */}
-          <div className="w-48 border-l bg-card p-3 flex flex-col gap-2">
+          <div className="w-48 border-l bg-card p-3 flex flex-col gap-2 min-h-0 overflow-y-auto">
             {/* Add Text Button */}
             <Button onClick={handleAddText} variant="outline" size="sm" className="w-full">
               <Plus className="h-3 w-3 mr-1" />
@@ -1077,32 +1066,11 @@ export function RemixPlanReview() {
       )}
 
       {/* Footer */}
-      <div className="px-3 py-2 border-t bg-card flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => changeSlide((prev) => prev - 1)}
-            disabled={activeSlide === 1}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <span className="text-sm text-muted-foreground px-2">
-            {activeSlide} / {totalCount}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => changeSlide((prev) => prev + 1)}
-            disabled={activeSlide === totalCount}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-        </div>
+      <div className="px-3 py-2 border-t bg-card flex items-center justify-end shrink-0">
         <div className="flex items-center gap-3">
           <span className="text-sm">
             <span className="font-medium">{selectedCount}</span>
-            <span className="text-muted-foreground">/{totalCount}</span>
+            <span className="text-muted-foreground">/{totalCount} ready</span>
           </span>
           <Button onClick={handleDownloadAll} disabled={selectedCount !== totalCount}>
             <Download className="h-4 w-4 mr-2" />
