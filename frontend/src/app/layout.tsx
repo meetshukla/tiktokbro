@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'TikTokBro - Creator Studio',
+  title: 'ShortsBro - Creator Studio',
   description: 'Generate viral content with AI',
 };
 

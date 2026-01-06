@@ -5,6 +5,8 @@ import pinterestRoutes from './pinterest.routes';
 import tiktokRoutes from './tiktok.routes';
 import slideshowRoutes from './slideshow.routes';
 import settingsRoutes from './settings.routes';
+import reactionRoutes from './reaction.routes';
+import ugcReactionRoutes from './ugc-reaction.routes';
 
 const router = Router();
 
@@ -14,6 +16,8 @@ router.use('/pinterest', pinterestRoutes);
 router.use('/tiktok', tiktokRoutes);
 router.use('/slideshows', slideshowRoutes);
 router.use('/settings', settingsRoutes);
+router.use('/reactions', reactionRoutes);
+router.use('/ugc-reactions', ugcReactionRoutes);
 
 // Health check
 router.get('/health', (_, res) => {

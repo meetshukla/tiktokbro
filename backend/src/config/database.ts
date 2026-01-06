@@ -12,6 +12,11 @@ export async function connectDatabase(): Promise<void> {
   }
 }
 
+export async function disconnectDatabase(): Promise<void> {
+  await mongoose.disconnect();
+  console.log('👋 Disconnected from MongoDB');
+}
+
 mongoose.connection.on('disconnected', () => {
   console.log('⚠️ MongoDB disconnected');
 });

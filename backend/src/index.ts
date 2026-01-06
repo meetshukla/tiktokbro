@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
 import routes from './routes';
 import { errorHandler } from './middleware/error-handler';
 import { connectDatabase } from './config/database';
@@ -17,6 +18,9 @@ app.use(
 );
 app.use(express.json({ limit: '50mb' }));
 
+// Static file serving for reaction library videos/images
+app.use('/reactions-library', express.static(path.join(__dirname, '..', 'reactions-library')));
+
 // Routes
 app.use('/api', routes);
 
@@ -30,3 +34,4 @@ connectDatabase().then(() => {
     console.log(`Health check: http://localhost:${PORT}/api/health`);
   });
 });
+

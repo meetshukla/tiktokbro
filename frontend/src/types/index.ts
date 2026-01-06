@@ -231,3 +231,94 @@ export interface SlideshowSearchResponse {
   data?: SlideshowListItem[];
   error?: string;
 }
+
+// ==================== UGC Reaction Types ====================
+
+export type ReactionStage =
+  | 'upload'
+  | 'select'
+  | 'generating-images'
+  | 'select-image'
+  | 'generating-video'
+  | 'complete'
+  | 'error';
+
+export interface Reaction {
+  reactionId: string;
+  name: string;
+  category: string;
+  videoUrl: string;
+  firstFrameUrl: string; // Also used as thumbnail
+  duration: number;
+  description?: string;
+}
+
+export interface ReactionListItem {
+  reactionId: string;
+  name: string;
+  category: string;
+  firstFrameUrl: string; // Used as thumbnail
+  duration: number;
+  description?: string;
+}
+
+export interface GeneratedAvatarImage {
+  id: string;
+  imageUrl: string;
+  selected: boolean;
+}
+
+export interface UGCReactionSession {
+  sessionId: string;
+  name: string;
+  stage: ReactionStage;
+  avatarImageUrl?: string;
+  avatarImageBase64?: string;
+  selectedReactionId?: string;
+  generatedImages?: GeneratedAvatarImage[];
+  selectedImageUrl?: string;
+  generatedVideoUrl?: string;
+  generatedVideoBase64?: string;
+  error?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// UGC Reaction API Types
+export interface ReactionListResponse {
+  success: boolean;
+  data?: ReactionListItem[];
+  error?: string;
+}
+
+export interface ReactionGetResponse {
+  success: boolean;
+  data?: Reaction;
+  error?: string;
+}
+
+export interface ReactionCategoriesResponse {
+  success: boolean;
+  data?: string[];
+  error?: string;
+}
+
+export interface UGCReactionSessionResponse {
+  success: boolean;
+  data?: UGCReactionSession;
+  error?: string;
+}
+
+export interface UGCReactionListResponse {
+  success: boolean;
+  sessions?: Array<{
+    sessionId: string;
+    name: string;
+    stage: string;
+    createdAt: string;
+    updatedAt: string;
+  }>;
+  total?: number;
+  pages?: number;
+  error?: string;
+}

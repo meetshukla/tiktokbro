@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Images, Video, Sparkles } from 'lucide-react';
+import { Images, Video, Sparkles, Clapperboard } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -27,6 +27,11 @@ const items = [
     url: '/avatar',
     icon: Video,
   },
+  {
+    title: 'UGC Reactions',
+    url: '/reactions',
+    icon: Clapperboard,
+  },
 ];
 
 export function AppSidebar() {
@@ -41,7 +46,7 @@ export function AppSidebar() {
               <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                 <Sparkles className="size-4" />
               </div>
-              <span className="font-semibold">TikTokBro</span>
+              <span className="font-semibold">ShortsBro</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

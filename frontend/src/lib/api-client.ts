@@ -216,3 +216,144 @@ export async function updateSettings(productContext: string): Promise<SettingsRe
     body: JSON.stringify({ productContext }),
   });
 }
+
+// ==================== UGC Reaction API ====================
+
+import {
+  ReactionListResponse,
+  ReactionGetResponse,
+  ReactionCategoriesResponse,
+  UGCReactionSessionResponse,
+  UGCReactionListResponse,
+} from '@/types';
+
+/**
+ * Get all reactions from the library
+ */
+export async function fetchReactions(): Promise<ReactionListResponse> {
+  return fetchApi<ReactionListResponse>('/reactions');
+}
+
+/**
+ * Get a single reaction by ID
+ */
+export async function getReaction(reactionId: string): Promise<ReactionGetResponse> {
+  return fetchApi<ReactionGetResponse>(`/reactions/${reactionId}`);
+}
+
+/**
+ * Get all reaction categories
+ */
+export async function getReactionCategories(): Promise<ReactionCategoriesResponse> {
+  return fetchApi<ReactionCategoriesResponse>('/reactions/categories');
+}
+
+/**
+ * Get reactions by category
+ */
+export async function getReactionsByCategory(category: string): Promise<ReactionListResponse> {
+  return fetchApi<ReactionListResponse>(`/reactions/category/${encodeURIComponent(category)}`);
+}
+
+/**
+ * Create a new UGC reaction session
+ */
+export async function createUGCReactionSession(
+  sessionId: string,
+  name?: string
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>('/ugc-reactions', {
+    method: 'POST',
+    body: JSON.stringify({ sessionId, name }),
+  });
+}
+
+/**
+ * Get a UGC reaction session
+ */
+export async function getUGCReactionSession(
+  sessionId: string
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}`);
+}
+
+/**
+ * List all UGC reaction sessions
+ */
+export async function listUGCReactionSessions(
+  page: number = 1,
+  limit: number = 20
+): Promise<UGCReactionListResponse> {
+  return fetchApi<UGCReactionListResponse>(`/ugc-reactions?page=${page}&limit=${limit}`);
+}
+
+/**
+ * Upload avatar image for a session
+ */
+export async function uploadAvatarImage(
+  sessionId: string,
+  imageData: string,
+  mimeType: string = 'image/jpeg'
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}/upload`, {
+    method: 'POST',
+    body: JSON.stringify({ imageData, mimeType }),
+  });
+}
+
+/**
+ * Select a reaction from the library
+ */
+export async function selectReaction(
+  sessionId: string,
+  reactionId: string
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}/select-reaction`, {
+    method: 'POST',
+    body: JSON.stringify({ reactionId }),
+  });
+}
+
+/**
+ * Generate avatar images using Nano Banana Pro
+ */
+export async function generateAvatarImages(sessionId: string): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}/generate-images`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * Select a generated image for video creation
+ */
+export async function selectGeneratedImage(
+  sessionId: string,
+  imageId: string
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}/select-image`, {
+    method: 'POST',
+    body: JSON.stringify({ imageId }),
+  });
+}
+
+/**
+ * Generate reaction video using Kling 2.6
+ */
+export async function generateReactionVideo(
+  sessionId: string
+): Promise<UGCReactionSessionResponse> {
+  return fetchApi<UGCReactionSessionResponse>(`/ugc-reactions/${sessionId}/generate-video`, {
+    method: 'POST',
+  });
+}
+
+/**
+ * Delete a UGC reaction session
+ */
+export async function deleteUGCReactionSession(
+  sessionId: string
+): Promise<{ success: boolean; message?: string; error?: string }> {
+  return fetchApi(`/ugc-reactions/${sessionId}`, {
+    method: 'DELETE',
+  });
+}
