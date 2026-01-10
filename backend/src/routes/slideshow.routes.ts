@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { slideshowService, SlideshowSessionData } from '../services/slideshow.service';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -7,7 +8,7 @@ const router = Router();
  * POST /api/slideshows
  * Create a new slideshow session
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const data: SlideshowSessionData = req.body;
 
@@ -20,6 +21,9 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       res.status(400).json({ success: false, error: 'config is required' });
       return;
     }
+
+    // Attach userId from authenticated user
+    data.userId = req.user?.userId;
 
     const session = await slideshowService.create(data);
     res.status(201).json({ success: true, data: session });
@@ -35,14 +39,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * GET /api/slideshows
- * List all slideshow sessions with pagination
+ * List all slideshow sessions with pagination (filtered by user)
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
-    const result = await slideshowService.list(page, limit);
+    const result = await slideshowService.list(page, limit, req.user?.userId);
     res.json({ success: true, ...result });
   } catch (error) {
     next(error);
@@ -51,9 +55,9 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * GET /api/slideshows/search
- * Search slideshows by name or prompt
+ * Search slideshows by name or prompt (filtered by user)
  */
-router.get('/search', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/search', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const query = (req.query.q as string) || '';
     const limit = Math.min(parseInt(req.query.limit as string) || 10, 50);
@@ -63,7 +67,7 @@ router.get('/search', async (req: Request, res: Response, next: NextFunction) =>
       return;
     }
 
-    const sessions = await slideshowService.search(query, limit);
+    const sessions = await slideshowService.search(query, limit, req.user?.userId);
     res.json({ success: true, data: sessions });
   } catch (error) {
     next(error);
@@ -74,13 +78,19 @@ router.get('/search', async (req: Request, res: Response, next: NextFunction) =>
  * GET /api/slideshows/:sessionId
  * Get a specific slideshow session
  */
-router.get('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:sessionId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sessionId } = req.params;
     const session = await slideshowService.getById(sessionId);
 
     if (!session) {
       res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    // Verify ownership - deny access if no userId (orphaned) or userId doesn't match
+    if (!session.userId || session.userId !== req.user?.userId) {
+      res.status(403).json({ success: false, error: 'Access denied' });
       return;
     }
 
@@ -94,20 +104,27 @@ router.get('/:sessionId', async (req: Request, res: Response, next: NextFunction
  * PUT /api/slideshows/:sessionId
  * Update an existing slideshow session
  */
-router.put('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+router.put('/:sessionId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sessionId } = req.params;
     const data: Partial<SlideshowSessionData> = req.body;
 
-    // Don't allow changing sessionId
+    // Don't allow changing sessionId or userId
     delete data.sessionId;
+    delete data.userId;
 
-    const session = await slideshowService.update(sessionId, data);
-
-    if (!session) {
+    // First check ownership - deny if no userId or doesn't match
+    const existing = await slideshowService.getById(sessionId);
+    if (!existing) {
       res.status(404).json({ success: false, error: 'Session not found' });
       return;
     }
+    if (!existing.userId || existing.userId !== req.user?.userId) {
+      res.status(403).json({ success: false, error: 'Access denied' });
+      return;
+    }
+
+    const session = await slideshowService.update(sessionId, data);
 
     res.json({ success: true, data: session });
   } catch (error) {
@@ -119,51 +136,71 @@ router.put('/:sessionId', async (req: Request, res: Response, next: NextFunction
  * DELETE /api/slideshows/:sessionId
  * Delete a slideshow session
  */
-router.delete('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const deleted = await slideshowService.delete(sessionId);
+router.delete(
+  '/:sessionId',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
 
-    if (!deleted) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
+      // First check ownership - deny if no userId or doesn't match
+      const existing = await slideshowService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      await slideshowService.delete(sessionId);
+      res.json({ success: true, message: 'Session deleted successfully' });
+    } catch (error) {
+      next(error);
     }
-
-    res.json({ success: true, message: 'Session deleted successfully' });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * POST /api/slideshows/:sessionId/duplicate
  * Duplicate an existing slideshow session
  */
-router.post('/:sessionId/duplicate', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const { newSessionId } = req.body;
+router.post(
+  '/:sessionId/duplicate',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+      const { newSessionId } = req.body;
 
-    if (!newSessionId) {
-      res.status(400).json({ success: false, error: 'newSessionId is required' });
-      return;
+      if (!newSessionId) {
+        res.status(400).json({ success: false, error: 'newSessionId is required' });
+        return;
+      }
+
+      // First check ownership - deny if no userId or doesn't match
+      const existing = await slideshowService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Original session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await slideshowService.duplicate(sessionId, newSessionId, req.user?.userId);
+
+      res.status(201).json({ success: true, data: session });
+    } catch (error) {
+      if ((error as { code?: number }).code === 11000) {
+        res.status(409).json({ success: false, error: 'Session with new ID already exists' });
+        return;
+      }
+      next(error);
     }
-
-    const session = await slideshowService.duplicate(sessionId, newSessionId);
-
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Original session not found' });
-      return;
-    }
-
-    res.status(201).json({ success: true, data: session });
-  } catch (error) {
-    if ((error as { code?: number }).code === 11000) {
-      res.status(409).json({ success: false, error: 'Session with new ID already exists' });
-      return;
-    }
-    next(error);
   }
-});
+);
 
 export default router;

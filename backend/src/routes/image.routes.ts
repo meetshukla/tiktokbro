@@ -2,11 +2,12 @@ import { Router, Request, Response } from 'express';
 import axios from 'axios';
 import { generateImage } from '../services/image.service';
 import { GenerateImageRequest, GenerateImageResponse } from '../types';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
-// Proxy endpoint for loading external images (bypasses CORS)
-router.get('/proxy', async (req: Request, res: Response) => {
+// Proxy endpoint for loading external images (bypasses CORS) - requires auth to prevent abuse
+router.get('/proxy', requireAuth, async (req: Request, res: Response) => {
   const imageUrl = req.query.url as string;
 
   if (!imageUrl) {
@@ -36,6 +37,7 @@ router.get('/proxy', async (req: Request, res: Response) => {
 
 router.post(
   '/',
+  requireAuth,
   async (
     req: Request<{}, GenerateImageResponse, GenerateImageRequest>,
     res: Response<GenerateImageResponse>

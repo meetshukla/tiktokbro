@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Images, Video, Sparkles, Clapperboard } from 'lucide-react';
+import { Images, Video, Sparkles, Clapperboard, LogOut } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,9 @@ import {
   SidebarFooter,
 } from '@/components/ui/sidebar';
 import { ProductSettings } from './ProductSettings';
+import { useAuth } from '@/context/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 
 const items = [
   {
@@ -36,6 +39,7 @@ const items = [
 
 export function AppSidebar() {
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
 
   return (
     <Sidebar>
@@ -76,6 +80,29 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="p-0">
         <ProductSettings />
+        {user && (
+          <div className="flex items-center gap-3 border-t px-3 py-3">
+            <Avatar className="size-8">
+              <AvatarImage src={user.picture} alt={user.name} />
+              <AvatarFallback className="text-xs">
+                {user.name.charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-medium">{user.name}</p>
+              <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="size-8 shrink-0"
+              onClick={signOut}
+              title="Sign out"
+            >
+              <LogOut className="size-4" />
+            </Button>
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

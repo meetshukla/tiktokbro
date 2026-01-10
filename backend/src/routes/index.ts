@@ -7,9 +7,11 @@ import slideshowRoutes from './slideshow.routes';
 import settingsRoutes from './settings.routes';
 import reactionRoutes from './reaction.routes';
 import ugcReactionRoutes from './ugc-reaction.routes';
+import authRoutes from './auth.routes';
 
 const router = Router();
 
+router.use('/auth', authRoutes);
 router.use('/generate-plan', planRoutes);
 router.use('/generate-image', imageRoutes);
 router.use('/pinterest', pinterestRoutes);

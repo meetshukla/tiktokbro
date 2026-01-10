@@ -4,6 +4,7 @@ import { falService } from './fal.service';
 
 export interface UGCReactionSessionData {
   sessionId: string;
+  userId?: string;
   name?: string;
   stage?:
     | 'upload'
@@ -30,6 +31,7 @@ export interface UGCReactionSessionData {
 
 export interface UGCReactionListItem {
   sessionId: string;
+  userId?: string;
   name: string;
   stage: string;
   createdAt: Date;
@@ -40,9 +42,10 @@ class UGCReactionService {
   /**
    * Create a new UGC reaction session
    */
-  async create(sessionId: string, name?: string): Promise<IUGCReactionSession> {
+  async create(sessionId: string, name?: string, userId?: string): Promise<IUGCReactionSession> {
     const session = new UGCReactionSession({
       sessionId,
+      userId,
       name: name || 'Untitled Reaction',
       stage: 'upload',
     });
@@ -76,26 +79,30 @@ class UGCReactionService {
 
   /**
    * List all sessions with pagination
+   * If userId is provided, only return sessions for that user
    */
   async list(
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    userId?: string
   ): Promise<{ sessions: UGCReactionListItem[]; total: number; pages: number }> {
     const skip = (page - 1) * limit;
+    const filter = userId ? { userId } : {};
 
     const [sessions, total] = await Promise.all([
-      UGCReactionSession.find()
-        .select('sessionId name stage createdAt updatedAt')
+      UGCReactionSession.find(filter)
+        .select('sessionId userId name stage createdAt updatedAt')
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      UGCReactionSession.countDocuments(),
+      UGCReactionSession.countDocuments(filter),
     ]);
 
     return {
       sessions: sessions.map((s) => ({
         sessionId: s.sessionId,
+        userId: s.userId,
         name: s.name,
         stage: s.stage,
         createdAt: s.createdAt,
@@ -482,10 +489,12 @@ class UGCReactionService {
 
   /**
    * List completed sessions for gallery (only videos)
+   * If userId is provided, only return sessions for that user
    */
   async listCompleted(
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    userId?: string
   ): Promise<{
     sessions: Array<UGCReactionListItem & { thumbnailUrl?: string; videoUrl?: string }>;
     total: number;
@@ -494,7 +503,7 @@ class UGCReactionService {
     const skip = (page - 1) * limit;
 
     // Show completed videos and drafts with generated images (in-progress work)
-    const query = {
+    const query: Record<string, unknown> = {
       $or: [
         // Completed videos
         { stage: 'complete', generatedVideoUrl: { $exists: true, $ne: null } },
@@ -505,11 +514,14 @@ class UGCReactionService {
         },
       ],
     };
+    if (userId) {
+      query.userId = userId;
+    }
 
     const [sessions, total] = await Promise.all([
       UGCReactionSession.find(query)
         .select(
-          'sessionId name stage createdAt updatedAt generatedImages generatedVideoUrl selectedImageUrl selectedReactionId'
+          'sessionId userId name stage createdAt updatedAt generatedImages generatedVideoUrl selectedImageUrl selectedReactionId'
         )
         .sort({ updatedAt: -1 })
         .skip(skip)
@@ -521,6 +533,7 @@ class UGCReactionService {
     return {
       sessions: sessions.map((s) => ({
         sessionId: s.sessionId,
+        userId: s.userId,
         name: s.name,
         stage: s.stage,
         createdAt: s.createdAt,

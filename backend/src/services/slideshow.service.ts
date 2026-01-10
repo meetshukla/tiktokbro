@@ -2,6 +2,7 @@ import { SlideshowSession, ISlideshowSession } from '../models/slideshow.model';
 
 export interface SlideshowSessionData {
   sessionId: string;
+  userId?: string;
   name?: string;
   prompt: string;
   stage: string;
@@ -66,6 +67,7 @@ export interface SlideshowSessionData {
 
 export interface SlideshowListItem {
   sessionId: string;
+  userId?: string;
   name: string;
   prompt: string;
   stage: string;
@@ -126,26 +128,30 @@ class SlideshowService {
 
   /**
    * List all slideshow sessions (with pagination)
+   * If userId is provided, only return sessions for that user
    */
   async list(
     page: number = 1,
-    limit: number = 20
+    limit: number = 20,
+    userId?: string
   ): Promise<{ sessions: SlideshowListItem[]; total: number; pages: number }> {
     const skip = (page - 1) * limit;
+    const filter = userId ? { userId } : {};
 
     const [sessions, total] = await Promise.all([
-      SlideshowSession.find()
-        .select('sessionId name prompt stage slides plans remixPlans createdAt updatedAt')
+      SlideshowSession.find(filter)
+        .select('sessionId userId name prompt stage slides plans remixPlans createdAt updatedAt')
         .sort({ updatedAt: -1 })
         .skip(skip)
         .limit(limit)
         .lean(),
-      SlideshowSession.countDocuments(),
+      SlideshowSession.countDocuments(filter),
     ]);
 
     return {
       sessions: sessions.map((s) => ({
         sessionId: s.sessionId,
+        userId: s.userId,
         name: s.name,
         prompt: s.prompt,
         stage: s.stage,
@@ -160,21 +166,28 @@ class SlideshowService {
 
   /**
    * Search slideshows by name or prompt
+   * If userId is provided, only search within that user's sessions
    */
-  async search(query: string, limit: number = 10): Promise<SlideshowListItem[]> {
-    const sessions = await SlideshowSession.find({
+  async search(query: string, limit: number = 10, userId?: string): Promise<SlideshowListItem[]> {
+    const filter: Record<string, unknown> = {
       $or: [
         { name: { $regex: query, $options: 'i' } },
         { prompt: { $regex: query, $options: 'i' } },
       ],
-    })
-      .select('sessionId name prompt stage slides plans remixPlans createdAt updatedAt')
+    };
+    if (userId) {
+      filter.userId = userId;
+    }
+
+    const sessions = await SlideshowSession.find(filter)
+      .select('sessionId userId name prompt stage slides plans remixPlans createdAt updatedAt')
       .sort({ updatedAt: -1 })
       .limit(limit)
       .lean();
 
     return sessions.map((s) => ({
       sessionId: s.sessionId,
+      userId: s.userId,
       name: s.name,
       prompt: s.prompt,
       stage: s.stage,
@@ -232,7 +245,11 @@ class SlideshowService {
   /**
    * Duplicate an existing slideshow
    */
-  async duplicate(sessionId: string, newSessionId: string): Promise<ISlideshowSession | null> {
+  async duplicate(
+    sessionId: string,
+    newSessionId: string,
+    userId?: string
+  ): Promise<ISlideshowSession | null> {
     const original = await this.getById(sessionId);
     if (!original) {
       return null;
@@ -240,6 +257,7 @@ class SlideshowService {
 
     const duplicateData: SlideshowSessionData = {
       sessionId: newSessionId,
+      userId, // Assign to the requesting user
       name: `${original.name} (Copy)`,
       prompt: original.prompt,
       stage: original.stage,

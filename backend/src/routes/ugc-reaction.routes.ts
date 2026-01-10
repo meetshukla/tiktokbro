@@ -1,5 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import { ugcReactionService } from '../services/ugc-reaction.service';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -7,7 +8,7 @@ const router = Router();
  * POST /api/ugc-reactions
  * Create a new UGC reaction session
  */
-router.post('/', async (req: Request, res: Response, next: NextFunction) => {
+router.post('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sessionId, name } = req.body;
 
@@ -16,7 +17,7 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
       return;
     }
 
-    const session = await ugcReactionService.create(sessionId, name);
+    const session = await ugcReactionService.create(sessionId, name, req.user?.userId);
     res.status(201).json({ success: true, data: session });
   } catch (error) {
     if ((error as { code?: number }).code === 11000) {
@@ -29,14 +30,14 @@ router.post('/', async (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * GET /api/ugc-reactions
- * List all UGC reaction sessions with pagination
+ * List all UGC reaction sessions with pagination (filtered by user)
  */
-router.get('/', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
-    const result = await ugcReactionService.list(page, limit);
+    const result = await ugcReactionService.list(page, limit, req.user?.userId);
     res.json({ success: true, ...result });
   } catch (error) {
     next(error);
@@ -45,15 +46,15 @@ router.get('/', async (req: Request, res: Response, next: NextFunction) => {
 
 /**
  * GET /api/ugc-reactions/gallery
- * List completed sessions for gallery display
+ * List completed sessions for gallery display (filtered by user)
  * NOTE: This MUST be before /:sessionId route to avoid 'gallery' being matched as sessionId
  */
-router.get('/gallery', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/gallery', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const page = parseInt(req.query.page as string) || 1;
     const limit = Math.min(parseInt(req.query.limit as string) || 20, 100);
 
-    const result = await ugcReactionService.listCompleted(page, limit);
+    const result = await ugcReactionService.listCompleted(page, limit, req.user?.userId);
     res.json({ success: true, ...result });
   } catch (error) {
     next(error);
@@ -64,13 +65,19 @@ router.get('/gallery', async (req: Request, res: Response, next: NextFunction) =
  * GET /api/ugc-reactions/:sessionId
  * Get a specific session
  */
-router.get('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
+router.get('/:sessionId', requireAuth, async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { sessionId } = req.params;
     const session = await ugcReactionService.getById(sessionId);
 
     if (!session) {
       res.status(404).json({ success: false, error: 'Session not found' });
+      return;
+    }
+
+    // Verify ownership - deny access if no userId or doesn't match
+    if (!session.userId || session.userId !== req.user?.userId) {
+      res.status(403).json({ success: false, error: 'Access denied' });
       return;
     }
 
@@ -84,77 +91,108 @@ router.get('/:sessionId', async (req: Request, res: Response, next: NextFunction
  * PATCH /api/ugc-reactions/:sessionId
  * Update a session
  */
-router.patch('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const data = req.body;
+router.patch(
+  '/:sessionId',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+      const data = req.body;
 
-    // Don't allow changing sessionId
-    delete data.sessionId;
+      // Don't allow changing sessionId or userId
+      delete data.sessionId;
+      delete data.userId;
 
-    const session = await ugcReactionService.update(sessionId, data);
+      // First check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
 
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
+      const session = await ugcReactionService.update(sessionId, data);
+
+      res.json({ success: true, data: session });
+    } catch (error) {
+      next(error);
     }
-
-    res.json({ success: true, data: session });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * DELETE /api/ugc-reactions/:sessionId
  * Delete a session
  */
-router.delete('/:sessionId', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const deleted = await ugcReactionService.delete(sessionId);
+router.delete(
+  '/:sessionId',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
 
-    if (!deleted) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
+      // First check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      await ugcReactionService.delete(sessionId);
+      res.json({ success: true, message: 'Session deleted successfully' });
+    } catch (error) {
+      next(error);
     }
-
-    res.json({ success: true, message: 'Session deleted successfully' });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * POST /api/ugc-reactions/:sessionId/upload
  * Upload avatar image (expects base64 in body)
  */
-router.post('/:sessionId/upload', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const { imageData, mimeType } = req.body;
+router.post(
+  '/:sessionId/upload',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+      const { imageData, mimeType } = req.body;
 
-    if (!imageData) {
-      res.status(400).json({ success: false, error: 'imageData is required' });
-      return;
+      if (!imageData) {
+        res.status(400).json({ success: false, error: 'imageData is required' });
+        return;
+      }
+
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await ugcReactionService.uploadAvatar(
+        sessionId,
+        imageData,
+        mimeType || 'image/jpeg'
+      );
+
+      res.json({ success: true, data: session });
+    } catch (error) {
+      next(error);
     }
-
-    const session = await ugcReactionService.uploadAvatar(
-      sessionId,
-      imageData,
-      mimeType || 'image/jpeg'
-    );
-
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
-    }
-
-    res.json({ success: true, data: session });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * POST /api/ugc-reactions/:sessionId/select-reaction
@@ -162,6 +200,7 @@ router.post('/:sessionId/upload', async (req: Request, res: Response, next: Next
  */
 router.post(
   '/:sessionId/select-reaction',
+  requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { sessionId } = req.params;
@@ -172,12 +211,18 @@ router.post(
         return;
       }
 
-      const session = await ugcReactionService.selectReaction(sessionId, reactionId);
-
-      if (!session) {
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
         res.status(404).json({ success: false, error: 'Session not found' });
         return;
       }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await ugcReactionService.selectReaction(sessionId, reactionId);
 
       res.json({ success: true, data: session });
     } catch (error) {
@@ -192,16 +237,23 @@ router.post(
  */
 router.post(
   '/:sessionId/generate-images',
+  requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { sessionId } = req.params;
 
-      const session = await ugcReactionService.generateAvatarImages(sessionId);
-
-      if (!session) {
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
         res.status(404).json({ success: false, error: 'Session not found' });
         return;
       }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await ugcReactionService.generateAvatarImages(sessionId);
 
       res.json({ success: true, data: session });
     } catch (error) {
@@ -214,28 +266,38 @@ router.post(
  * POST /api/ugc-reactions/:sessionId/select-image
  * Select a generated image for video creation
  */
-router.post('/:sessionId/select-image', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
-    const { imageId } = req.body;
+router.post(
+  '/:sessionId/select-image',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
+      const { imageId } = req.body;
 
-    if (!imageId) {
-      res.status(400).json({ success: false, error: 'imageId is required' });
-      return;
+      if (!imageId) {
+        res.status(400).json({ success: false, error: 'imageId is required' });
+        return;
+      }
+
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await ugcReactionService.selectImage(sessionId, imageId);
+
+      res.json({ success: true, data: session });
+    } catch (error) {
+      next(error);
     }
-
-    const session = await ugcReactionService.selectImage(sessionId, imageId);
-
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
-    }
-
-    res.json({ success: true, data: session });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 /**
  * POST /api/ugc-reactions/:sessionId/generate-video
@@ -243,16 +305,23 @@ router.post('/:sessionId/select-image', async (req: Request, res: Response, next
  */
 router.post(
   '/:sessionId/generate-video',
+  requireAuth,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { sessionId } = req.params;
 
-      const session = await ugcReactionService.generateVideo(sessionId);
-
-      if (!session) {
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
         res.status(404).json({ success: false, error: 'Session not found' });
         return;
       }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
+
+      const session = await ugcReactionService.generateVideo(sessionId);
 
       res.json({ success: true, data: session });
     } catch (error) {
@@ -268,59 +337,99 @@ router.post(
  * Submit video generation to queue (non-blocking)
  * Returns immediately with job info for status tracking
  */
-router.post('/:sessionId/submit-video', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
+router.post(
+  '/:sessionId/submit-video',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
 
-    const result = await ugcReactionService.submitVideoGeneration(sessionId);
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
 
-    res.json({
-      success: true,
-      data: result,
-    });
-  } catch (error) {
-    next(error);
+      const result = await ugcReactionService.submitVideoGeneration(sessionId);
+
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * GET /api/ugc-reactions/:sessionId/job-status
  * Check the status of pending job
  */
-router.get('/:sessionId/job-status', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
+router.get(
+  '/:sessionId/job-status',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
 
-    const status = await ugcReactionService.checkJobStatus(sessionId);
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
 
-    res.json({
-      success: true,
-      data: status,
-    });
-  } catch (error) {
-    next(error);
+      const status = await ugcReactionService.checkJobStatus(sessionId);
+
+      res.json({
+        success: true,
+        data: status,
+      });
+    } catch (error) {
+      next(error);
+    }
   }
-});
+);
 
 /**
  * POST /api/ugc-reactions/:sessionId/job-result
  * Fetch the result of a completed job and update session
  */
-router.post('/:sessionId/job-result', async (req: Request, res: Response, next: NextFunction) => {
-  try {
-    const { sessionId } = req.params;
+router.post(
+  '/:sessionId/job-result',
+  requireAuth,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { sessionId } = req.params;
 
-    const session = await ugcReactionService.fetchJobResult(sessionId);
+      // Check ownership - deny if no userId or doesn't match
+      const existing = await ugcReactionService.getById(sessionId);
+      if (!existing) {
+        res.status(404).json({ success: false, error: 'Session not found' });
+        return;
+      }
+      if (!existing.userId || existing.userId !== req.user?.userId) {
+        res.status(403).json({ success: false, error: 'Access denied' });
+        return;
+      }
 
-    if (!session) {
-      res.status(404).json({ success: false, error: 'Session not found' });
-      return;
+      const session = await ugcReactionService.fetchJobResult(sessionId);
+
+      res.json({ success: true, data: session });
+    } catch (error) {
+      next(error);
     }
-
-    res.json({ success: true, data: session });
-  } catch (error) {
-    next(error);
   }
-});
+);
 
 export default router;

@@ -47,6 +47,7 @@ export interface IPendingJob {
 
 export interface IUGCReactionSession extends Document {
   sessionId: string;
+  userId?: string;
   name: string;
   stage:
     | 'upload'
@@ -76,6 +77,7 @@ export interface IUGCReactionSession extends Document {
 const UGCReactionSessionSchema = new Schema<IUGCReactionSession>(
   {
     sessionId: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, index: true },
     name: { type: String, default: 'Untitled Reaction' },
     stage: {
       type: String,
@@ -108,6 +110,7 @@ const UGCReactionSessionSchema = new Schema<IUGCReactionSession>(
 // Indexes for efficient queries
 UGCReactionSessionSchema.index({ createdAt: -1 });
 UGCReactionSessionSchema.index({ updatedAt: -1 });
+UGCReactionSessionSchema.index({ userId: 1, updatedAt: -1 });
 
 export const UGCReactionSession = model<IUGCReactionSession>(
   'UGCReactionSession',

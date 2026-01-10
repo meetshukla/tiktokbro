@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import routes from './routes';
 import { errorHandler } from './middleware/error-handler';
@@ -8,11 +9,13 @@ import { connectDatabase } from './config/database';
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
 
 // Middleware
+app.use(cookieParser());
 app.use(
   cors({
-    origin: ['http://localhost:3000', 'http://127.0.0.1:3000'],
+    origin: [FRONTEND_URL, 'http://127.0.0.1:3000'],
     credentials: true,
   })
 );

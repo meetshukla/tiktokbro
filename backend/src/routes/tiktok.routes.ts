@@ -1,14 +1,15 @@
 import { Router, Request, Response } from 'express';
 import { scrapeTikTokSlideshow } from '../services/tiktok.service';
 import { analyzeSlideImage } from '../services/gemini.service';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
 /**
  * POST /api/tiktok/scrape
- * Scrape a TikTok Photo Mode slideshow URL
+ * Scrape a TikTok Photo Mode slideshow URL (requires auth)
  */
-router.post('/scrape', async (req: Request, res: Response) => {
+router.post('/scrape', requireAuth, async (req: Request, res: Response) => {
   try {
     const { url } = req.body;
 
@@ -36,9 +37,9 @@ router.post('/scrape', async (req: Request, res: Response) => {
 
 /**
  * POST /api/tiktok/analyze
- * Analyze scraped TikTok slides using Gemini Vision
+ * Analyze scraped TikTok slides using Gemini Vision (requires auth)
  */
-router.post('/analyze', async (req: Request, res: Response) => {
+router.post('/analyze', requireAuth, async (req: Request, res: Response) => {
   try {
     const { slides } = req.body;
 

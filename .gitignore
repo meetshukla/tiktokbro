@@ -1,6 +1,8 @@
 # Dependencies
 node_modules/
 
+gradbro
+
 # Build outputs
 .next/
 dist/

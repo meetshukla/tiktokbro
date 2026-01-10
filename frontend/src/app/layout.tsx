@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
+import { AuthProvider } from '@/context/AuthContext';
 import { SlideshowProvider } from '@/context/SlideshowContext';
 import { Toaster } from '@/components/ui/sonner';
 import { AppShell } from '@/components/layout/AppShell';
@@ -23,10 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={inter.variable}>
       <body className={`${inter.variable} font-sans antialiased`}>
-        <SlideshowProvider>
-          <AppShell>{children}</AppShell>
-          <Toaster />
-        </SlideshowProvider>
+        <AuthProvider>
+          <SlideshowProvider>
+            <AppShell>{children}</AppShell>
+            <Toaster />
+          </SlideshowProvider>
+        </AuthProvider>
       </body>
     </html>
   );

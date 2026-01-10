@@ -2,11 +2,13 @@ import { Router, Request, Response } from 'express';
 import { generateSlidePlan, generateRemixPlan, generateCreatePlan } from '../services/plan.service';
 import { GeneratePlanRequest, GeneratePlanResponse } from '../types';
 import { SlideAnalysis } from '../services/gemini.service';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
 router.post(
   '/',
+  requireAuth,
   async (
     req: Request<{}, GeneratePlanResponse, GeneratePlanRequest>,
     res: Response<GeneratePlanResponse>
@@ -60,7 +62,7 @@ router.post(
  * POST /api/generate-plan/create
  * Generate a slideshow plan from scratch (Pinterest queries + overlay text)
  */
-router.post('/create', async (req: Request, res: Response) => {
+router.post('/create', requireAuth, async (req: Request, res: Response) => {
   try {
     const { topic, slideCount = 5 } = req.body;
 
@@ -98,7 +100,7 @@ router.post('/create', async (req: Request, res: Response) => {
  * POST /api/generate-plan/remix
  * Generate a remix plan based on original slide analyses and new user prompt
  */
-router.post('/remix', async (req: Request, res: Response) => {
+router.post('/remix', requireAuth, async (req: Request, res: Response) => {
   try {
     const { analyses, userPrompt, productContext, userGuidance } = req.body;
 

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { Settings } from '../models/settings.model';
+import { requireAuth } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -7,9 +8,9 @@ const GLOBAL_KEY = 'global';
 
 /**
  * GET /api/settings
- * Get global settings
+ * Get global settings (requires auth)
  */
-router.get('/', async (_req: Request, res: Response) => {
+router.get('/', requireAuth, async (_req: Request, res: Response) => {
   try {
     const settings = await Settings.findOne({ key: GLOBAL_KEY });
 
@@ -28,9 +29,9 @@ router.get('/', async (_req: Request, res: Response) => {
 
 /**
  * PUT /api/settings
- * Update global settings
+ * Update global settings (requires auth)
  */
-router.put('/', async (req: Request, res: Response) => {
+router.put('/', requireAuth, async (req: Request, res: Response) => {
   try {
     const { productContext } = req.body;
 

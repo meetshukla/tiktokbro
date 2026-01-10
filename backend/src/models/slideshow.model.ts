@@ -125,6 +125,7 @@ const ImageConfigSchema = new Schema(
 // Main Slideshow Session Schema
 export interface ISlideshowSession extends Document {
   sessionId: string;
+  userId?: string;
   name: string;
   prompt: string;
   stage: string;
@@ -201,6 +202,7 @@ export interface ISlideshowSession extends Document {
 const SlideshowSessionSchema = new Schema<ISlideshowSession>(
   {
     sessionId: { type: String, required: true, unique: true, index: true },
+    userId: { type: String, index: true },
     name: { type: String, default: 'Untitled Slideshow' },
     prompt: { type: String, default: '' },
     stage: {
@@ -234,6 +236,7 @@ const SlideshowSessionSchema = new Schema<ISlideshowSession>(
 // Indexes for efficient queries
 SlideshowSessionSchema.index({ createdAt: -1 });
 SlideshowSessionSchema.index({ updatedAt: -1 });
+SlideshowSessionSchema.index({ userId: 1, updatedAt: -1 });
 SlideshowSessionSchema.index({ name: 'text', prompt: 'text' });
 
 export const SlideshowSession = model<ISlideshowSession>(
