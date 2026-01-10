@@ -1,11 +1,11 @@
 import { Router, Request, Response } from 'express';
-import { PinterestScraper } from '../services/pinterest.service';
+import { createPinterestScraper } from '../services/pinterest.service';
 
 const router = Router();
 
 /**
  * POST /api/pinterest/search
- * Search Pinterest for images
+ * Search Pinterest for images using Apify actor
  */
 router.post('/search', async (req: Request, res: Response) => {
   try {
@@ -18,7 +18,14 @@ router.post('/search', async (req: Request, res: Response) => {
       });
     }
 
-    const scraper = new PinterestScraper({ sleepTime: 300 });
+    const scraper = createPinterestScraper();
+    if (!scraper) {
+      return res.status(503).json({
+        success: false,
+        error: 'Pinterest search is not configured. APIFY_API_KEY is missing.',
+      });
+    }
+
     const urls = await scraper.search(query, limit);
 
     return res.json({
@@ -39,32 +46,39 @@ router.post('/search', async (req: Request, res: Response) => {
 });
 
 /**
- * GET /api/pinterest/board/:username/:board
- * Get images from a Pinterest board
+ * POST /api/pinterest/search-multiple
+ * Search multiple queries in a single request (more efficient)
  */
-router.get('/board/:username/:board', async (req: Request, res: Response) => {
+router.post('/search-multiple', async (req: Request, res: Response) => {
   try {
-    const { username, board } = req.params;
+    const { queries } = req.body;
 
-    if (!username || !board) {
+    if (!queries || !Array.isArray(queries) || queries.length === 0) {
       return res.status(400).json({
         success: false,
-        error: 'Username and board are required',
+        error: 'Queries array is required',
       });
     }
 
-    const scraper = new PinterestScraper();
-    const details = await scraper.getBoardDetails(username, board);
+    const scraper = createPinterestScraper();
+    if (!scraper) {
+      return res.status(503).json({
+        success: false,
+        error: 'Pinterest search is not configured. APIFY_API_KEY is missing.',
+      });
+    }
+
+    const results = await scraper.searchMultiple(queries);
 
     return res.json({
       success: true,
-      data: details,
+      data: Object.fromEntries(results),
     });
   } catch (error) {
-    console.error('Pinterest board error:', error);
+    console.error('Pinterest multi-search error:', error);
     return res.status(500).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch board',
+      error: error instanceof Error ? error.message : 'Search failed',
     });
   }
 });

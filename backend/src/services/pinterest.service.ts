@@ -1,131 +1,53 @@
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
+
+const APIFY_PINTEREST_ACTOR_URL =
+  'https://analogous-atlas--custom-pinterest-scrapper.apify.actor/search';
+
+interface ApifyPinterestResult {
+  query: string;
+  images: string[];
+}
+
+interface ApifyPinterestResponse {
+  success: boolean;
+  data: ApifyPinterestResult[];
+}
 
 export class PinterestScraper {
-  private session: AxiosInstance;
-  private baseUrl = 'https://www.pinterest.com';
-  private userAgent =
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
+  private apiToken: string;
   private errors: string[] = [];
-  private sleepTime: number;
 
-  constructor(options?: { userAgent?: string; sleepTime?: number }) {
-    this.userAgent = options?.userAgent || this.userAgent;
-    this.sleepTime = options?.sleepTime || 0;
-
-    this.session = axios.create({
-      headers: {
-        'User-Agent': this.userAgent,
-        Accept: 'application/json, text/javascript, */*, q=0.01',
-        'Accept-Language': 'en-US,en;q=0.9',
-      },
-      timeout: 30000,
-    });
-  }
-
-  private async sleep(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms));
-  }
-
-  private getBaseHeaders() {
-    return {
-      Host: 'www.pinterest.com',
-      'Sec-Ch-Ua-Platform': '"macOS"',
-      'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
-      'Sec-Ch-Ua-Mobile': '?0',
-      'X-Requested-With': 'XMLHttpRequest',
-      Accept: 'application/json, text/javascript, */*, q=0.01',
-      'X-Pinterest-Appstate': 'active',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'X-Pinterest-Pws-Handler': 'www/search/[scope].js',
-      'User-Agent': this.userAgent,
-      'Sec-Fetch-Site': 'same-origin',
-      'Sec-Fetch-Mode': 'cors',
-      'Sec-Fetch-Dest': 'empty',
-      Referer: `${this.baseUrl}/search/pins/?q=aesthetic`,
-    };
+  constructor() {
+    const token = process.env.APIFY_API_KEY;
+    if (!token) {
+      throw new Error('APIFY_API_KEY is not set in environment variables');
+    }
+    this.apiToken = token;
   }
 
   /**
-   * Search Pinterest directly using their internal API
+   * Search Pinterest using Apify actor with residential proxy
    */
   async search(query: string, limit = 26): Promise<string[]> {
-    // Request extra to account for filtered results
-    const pageSize = Math.min(limit + 10, 100);
-    const sourceUrl = `/search/pins/?q=${encodeURIComponent(query)}&rs=typed`;
-
-    // Initial request to set cookies
     try {
-      await this.session.get(`${this.baseUrl}${sourceUrl}`);
-    } catch {
-      // Ignore cookie fetch errors
-    }
-
-    const options = {
-      applied_unified_filters: null,
-      appliedProductFilters: '---',
-      article: null,
-      auto_correction_disabled: false,
-      corpus: null,
-      customized_rerank_type: null,
-      domains: null,
-      filters: null,
-      journey_depth: null,
-      page_size: pageSize,
-      price_max: null,
-      price_min: null,
-      query_pin_sigs: null,
-      query: query,
-      redux_normalize_feed: true,
-      request_params: null,
-      rs: 'typed',
-      scope: 'pins',
-      selected_one_bar_modules: null,
-      source_id: null,
-      source_module_id: null,
-      seoDrawerEnabled: false,
-      source_url: sourceUrl,
-      top_pin_id: null,
-      top_pin_ids: null,
-    };
-
-    const data = JSON.stringify({ options, context: {} });
-
-    const ts = Date.now();
-    const url = `${this.baseUrl}/resource/BaseSearchResource/get/?source_url=${encodeURIComponent(sourceUrl)}&data=${encodeURIComponent(data)}&_=${ts}`;
-
-    const headers = {
-      ...this.getBaseHeaders(),
-      'X-Pinterest-Source-Url': sourceUrl,
-    };
-
-    try {
-      const response = await this.session.get(url, { headers });
-
-      if (this.sleepTime) {
-        await this.sleep(this.sleepTime);
-      }
-
-      const imageUrls: string[] = [];
-      const results = response.data?.resource_response?.data?.results || [];
-
-      for (const result of results) {
-        // Prefer web-optimized sizes (always JPEG) over orig (can be HEIC from iPhone uploads)
-        // 736x is high quality and always web-friendly format
-        const imageUrl =
-          result?.images?.['736x']?.url ||
-          result?.images?.['564x']?.url ||
-          result?.images?.['474x']?.url ||
-          result?.images?.orig?.url;
-
-        if (imageUrl && !imageUrl.toLowerCase().endsWith('.heic')) {
-          imageUrls.push(imageUrl);
-          if (imageUrls.length >= limit) {
-            break;
-          }
+      const response = await axios.post<ApifyPinterestResponse>(
+        `${APIFY_PINTEREST_ACTOR_URL}?token=${this.apiToken}`,
+        { queries: [query] },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 60000,
         }
+      );
+
+      if (!response.data.success || !response.data.data?.length) {
+        this.errors.push(`No results for query: ${query}`);
+        return [];
       }
 
-      return imageUrls;
+      const images = response.data.data[0]?.images || [];
+      return images.slice(0, limit);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
       this.errors.push(`Search failed: ${message}`);
@@ -134,33 +56,35 @@ export class PinterestScraper {
   }
 
   /**
-   * Get pin details from a user's board
+   * Search multiple queries in a single request (more efficient)
    */
-  async getBoardDetails(username: string, board: string): Promise<Record<string, unknown> | null> {
-    const headers = {
-      ...this.getBaseHeaders(),
-      'x-pinterest-pws-handler': 'www/[username]/[slug].js',
-      'x-pinterest-source-url': `/${username}/${board}/`,
-    };
-
-    const params = new URLSearchParams({
-      source_url: `/${username}/${board}/`,
-      data: JSON.stringify({
-        options: { field_set_key: 'profile', username },
-        context: {},
-      }),
-      _: String(Date.now()),
-    });
+  async searchMultiple(queries: string[]): Promise<Map<string, string[]>> {
+    const results = new Map<string, string[]>();
 
     try {
-      const response = await this.session.get(
-        `${this.baseUrl}/resource/UserResource/get/?${params}`,
-        { headers }
+      const response = await axios.post<ApifyPinterestResponse>(
+        `${APIFY_PINTEREST_ACTOR_URL}?token=${this.apiToken}`,
+        { queries },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          timeout: 120000, // 2min timeout for multiple queries
+        }
       );
-      return response.data;
-    } catch {
-      return null;
+
+      if (response.data.success && response.data.data) {
+        for (const item of response.data.data) {
+          results.set(item.query, item.images);
+        }
+      }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      this.errors.push(`Multi-search failed: ${message}`);
+      console.error('Pinterest Apify multi-search error:', error);
     }
+
+    return results;
   }
 
   getErrors(): string[] {
@@ -168,4 +92,12 @@ export class PinterestScraper {
   }
 }
 
-export const pinterestScraper = new PinterestScraper({ sleepTime: 300 });
+// Factory function to create scraper (handles missing token gracefully)
+export function createPinterestScraper(): PinterestScraper | null {
+  try {
+    return new PinterestScraper();
+  } catch {
+    console.warn('Pinterest scraper not configured: APIFY_PINTEREST_TOKEN missing');
+    return null;
+  }
+}
