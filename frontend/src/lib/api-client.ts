@@ -389,6 +389,7 @@ export interface GalleryListResponse {
     createdAt: string;
     updatedAt: string;
     thumbnailUrl?: string;
+    videoUrl?: string;
   }>;
   total?: number;
   pages?: number;

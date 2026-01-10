@@ -258,6 +258,7 @@ export interface ReactionListItem {
   name: string;
   category: string;
   firstFrameUrl: string; // Used as thumbnail
+  videoUrl: string; // Video file for preview
   duration: number;
   description?: string;
 }

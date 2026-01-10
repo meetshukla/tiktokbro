@@ -487,16 +487,23 @@ class UGCReactionService {
     page: number = 1,
     limit: number = 20
   ): Promise<{
-    sessions: Array<UGCReactionListItem & { thumbnailUrl?: string }>;
+    sessions: Array<UGCReactionListItem & { thumbnailUrl?: string; videoUrl?: string }>;
     total: number;
     pages: number;
   }> {
     const skip = (page - 1) * limit;
 
-    // Only show completed videos
+    // Show completed videos and drafts with generated images (in-progress work)
     const query = {
-      stage: 'complete',
-      generatedVideoUrl: { $exists: true, $ne: null },
+      $or: [
+        // Completed videos
+        { stage: 'complete', generatedVideoUrl: { $exists: true, $ne: null } },
+        // Drafts with generated images (user can resume)
+        {
+          stage: { $in: ['select-image', 'image-selected'] },
+          generatedImages: { $exists: true, $ne: [] },
+        },
+      ],
     };
 
     const [sessions, total] = await Promise.all([
@@ -520,6 +527,7 @@ class UGCReactionService {
         updatedAt: s.updatedAt,
         // Use selected image as thumbnail
         thumbnailUrl: s.selectedImageUrl || s.generatedImages?.[0]?.imageUrl,
+        videoUrl: s.generatedVideoUrl,
       })),
       total,
       pages: Math.ceil(total / limit),

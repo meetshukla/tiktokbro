@@ -15,6 +15,7 @@ export interface ReactionListItem {
   name: string;
   category: string;
   firstFrameUrl: string; // Used as thumbnail
+  videoUrl: string; // Video file for preview
   duration: number;
   description?: string;
 }
@@ -25,7 +26,7 @@ class ReactionService {
    */
   async list(): Promise<ReactionListItem[]> {
     const reactions = await Reaction.find()
-      .select('reactionId name category firstFrameUrl duration description')
+      .select('reactionId name category firstFrameUrl videoUrl duration description')
       .sort({ category: 1, name: 1 })
       .lean();
 
@@ -34,6 +35,7 @@ class ReactionService {
       name: r.name,
       category: r.category,
       firstFrameUrl: r.firstFrameUrl,
+      videoUrl: r.videoUrl,
       duration: r.duration,
       description: r.description,
     }));
@@ -44,7 +46,7 @@ class ReactionService {
    */
   async getByCategory(category: string): Promise<ReactionListItem[]> {
     const reactions = await Reaction.find({ category })
-      .select('reactionId name category firstFrameUrl duration description')
+      .select('reactionId name category firstFrameUrl videoUrl duration description')
       .sort({ name: 1 })
       .lean();
 
@@ -53,6 +55,7 @@ class ReactionService {
       name: r.name,
       category: r.category,
       firstFrameUrl: r.firstFrameUrl,
+      videoUrl: r.videoUrl,
       duration: r.duration,
       description: r.description,
     }));

@@ -51,6 +51,7 @@ interface GalleryItem {
   createdAt: string;
   updatedAt: string;
   thumbnailUrl?: string;
+  videoUrl?: string;
 }
 
 export function ReactionWorkspace() {
@@ -80,6 +81,9 @@ export function ReactionWorkspace() {
   // Modal state for reaction preview
   const [previewReaction, setPreviewReaction] = useState<ReactionTemplate | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Modal state for gallery video preview
+  const [previewGalleryItem, setPreviewGalleryItem] = useState<GalleryItem | null>(null);
 
   // Gallery state
   const [galleryItems, setGalleryItems] = useState<GalleryItem[]>([]);
@@ -212,12 +216,35 @@ export function ReactionWorkspace() {
 
   const handleJobClick = async (job: ActiveJob) => {
     if (job.status === 'complete') {
-      await loadSession(job.sessionId);
+      // Load session data and show in gallery modal
+      try {
+        const response = await api.getUGCReactionSession(job.sessionId);
+        if (response.success && response.data) {
+          setPreviewGalleryItem({
+            sessionId: response.data.sessionId,
+            name: job.reactionName || 'Untitled',
+            stage: response.data.stage,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            thumbnailUrl: response.data.selectedImageUrl,
+            videoUrl: response.data.generatedVideoUrl,
+          });
+        }
+      } catch (e) {
+        console.error('Failed to load session:', e);
+      }
     }
   };
 
+  // Handle gallery item click - open modal for completed, load session for drafts
   const handleViewGalleryItem = async (item: GalleryItem) => {
-    await loadSession(item.sessionId);
+    if (item.stage === 'complete') {
+      // Completed video - show in modal
+      setPreviewGalleryItem(item);
+    } else {
+      // Draft - allow resuming
+      await loadSession(item.sessionId);
+    }
   };
 
   const handleDeleteGalleryItem = async (e: React.MouseEvent, sessionId: string) => {
@@ -237,34 +264,34 @@ export function ReactionWorkspace() {
     }
   };
 
-  const handleDownload = async () => {
-    const videoUrl = session?.generatedVideoUrl;
-    if (!videoUrl) return;
+  const handleDownload = async (videoUrl?: string) => {
+    const url = videoUrl || session?.generatedVideoUrl;
+    if (!url) return;
     try {
-      const response = await fetch(videoUrl);
+      const response = await fetch(url);
       const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
+      const blobUrl = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
+      a.href = blobUrl;
       a.download = `ugc-reaction-${session?.sessionId || 'video'}.mp4`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      URL.revokeObjectURL(blobUrl);
       toast.success('Video downloaded!');
     } catch {
       toast.error('Failed to download video');
     }
   };
 
-  const handleShare = async () => {
-    const videoUrl = session?.generatedVideoUrl;
-    if (!videoUrl) return;
+  const handleShare = async (videoUrl?: string) => {
+    const url = videoUrl || session?.generatedVideoUrl;
+    if (!url) return;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'My UGC Reaction Video', url: videoUrl });
+        await navigator.share({ title: 'My UGC Reaction Video', url });
       } else {
-        await navigator.clipboard.writeText(videoUrl);
+        await navigator.clipboard.writeText(url);
         toast.success('URL copied to clipboard!');
       }
     } catch (error) {
@@ -531,7 +558,11 @@ export function ReactionWorkspace() {
                             )}
                             {/* Hover overlay */}
                             <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <Play className="w-8 h-8 text-white" />
+                              {item.stage === 'complete' ? (
+                                <Play className="w-8 h-8 text-white" />
+                              ) : (
+                                <RefreshCcw className="w-8 h-8 text-white" />
+                              )}
                             </div>
                             {/* Delete button */}
                             <button
@@ -540,10 +571,16 @@ export function ReactionWorkspace() {
                             >
                               <Trash2 className="w-3.5 h-3.5 text-white" />
                             </button>
-                            {/* Video badge */}
-                            {item.stage === 'complete' && (
+                            {/* Badge */}
+                            {item.stage === 'complete' ? (
                               <div className="absolute bottom-2 left-2">
                                 <Badge className="bg-primary text-[10px] px-2 py-0.5">Video</Badge>
+                              </div>
+                            ) : (
+                              <div className="absolute bottom-2 left-2">
+                                <Badge variant="secondary" className="text-[10px] px-2 py-0.5">
+                                  Draft
+                                </Badge>
                               </div>
                             )}
                           </div>
@@ -711,12 +748,12 @@ export function ReactionWorkspace() {
                       </div>
 
                       <div className="flex gap-3">
-                        <Button onClick={handleDownload} size="lg" className="flex-1">
+                        <Button onClick={() => handleDownload()} size="lg" className="flex-1">
                           <Download className="w-5 h-5 mr-2" />
                           Download
                         </Button>
                         <Button
-                          onClick={handleShare}
+                          onClick={() => handleShare()}
                           variant="outline"
                           size="lg"
                           className="flex-1"
@@ -750,6 +787,7 @@ export function ReactionWorkspace() {
             <div className="aspect-[9/16] relative rounded-xl overflow-hidden bg-black mb-4">
               {previewReaction?.videoUrl ? (
                 <video
+                  key={previewReaction.videoUrl}
                   src={`${API_URL}${previewReaction.videoUrl}`}
                   autoPlay
                   loop
@@ -780,6 +818,75 @@ export function ReactionWorkspace() {
                 <Check className="w-4 h-4 mr-2" />
                 Use This Reaction
               </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ==================== GALLERY VIDEO PREVIEW MODAL ==================== */}
+      <Dialog
+        open={!!previewGalleryItem}
+        onOpenChange={(open) => !open && setPreviewGalleryItem(null)}
+      >
+        <DialogContent className="max-w-md p-0 overflow-hidden">
+          <DialogHeader className="p-4 pb-0">
+            <DialogTitle>{previewGalleryItem?.name || 'Your Video'}</DialogTitle>
+          </DialogHeader>
+          <div className="p-4">
+            {/* Video preview */}
+            <div className="aspect-[9/16] relative rounded-xl overflow-hidden bg-black mb-4">
+              {previewGalleryItem?.videoUrl ? (
+                <video
+                  key={previewGalleryItem.videoUrl}
+                  src={previewGalleryItem.videoUrl}
+                  autoPlay
+                  muted
+                  loop
+                  controls
+                  playsInline
+                  className="absolute inset-0 w-full h-full object-contain"
+                />
+              ) : previewGalleryItem?.thumbnailUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={getImageUrl(previewGalleryItem.thumbnailUrl)}
+                  alt={previewGalleryItem.name}
+                  className="absolute inset-0 w-full h-full object-cover"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <Video className="w-16 h-16 text-muted-foreground/40" />
+                </div>
+              )}
+            </div>
+
+            <p className="text-xs text-muted-foreground mb-4">
+              Created{' '}
+              {previewGalleryItem
+                ? new Date(previewGalleryItem.createdAt).toLocaleDateString()
+                : ''}
+            </p>
+
+            <div className="flex gap-3">
+              {previewGalleryItem?.videoUrl && (
+                <>
+                  <Button
+                    className="flex-1"
+                    onClick={() => handleDownload(previewGalleryItem.videoUrl)}
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Download
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => handleShare(previewGalleryItem.videoUrl)}
+                  >
+                    <Share2 className="w-4 h-4 mr-2" />
+                    Share
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </DialogContent>
